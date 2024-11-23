@@ -72,7 +72,7 @@ class GameState
             else if (result.second == chess::GameResult::LOSE) {
                 return MIN_SCORE;
             }
-            else if (result.second == chess::GameResult::DRAW) { // draw
+            else if (result.second == chess::GameResult::DRAW) {
                 return 0;
             }
 
