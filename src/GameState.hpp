@@ -63,6 +63,7 @@ class GameState
          * @return Score representing relative strategic advantage of the given board state.
          */
         std::int16_t evaluateBoard() const {
+
             // actual end game conditions, from current player's perspective
             auto result = board_.isGameOver();
             if (result.second == chess::GameResult::WIN) {
@@ -71,7 +72,7 @@ class GameState
             else if (result.second == chess::GameResult::LOSE) {
                 return MIN_SCORE;
             }
-            else { // draw
+            else if (result.second == chess::GameResult::DRAW) { // draw
                 return 0;
             }
 
@@ -103,6 +104,6 @@ class GameState
             int16_t who2move = (board_.sideToMove() == chess::Color::WHITE) ? 1 : -1;
             return materialScore * who2move;
         } //evaluateBoard
-};
+}; // class GameState
 
 #endif // GAME_STATE_HPP
