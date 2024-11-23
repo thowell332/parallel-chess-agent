@@ -8,9 +8,13 @@
 #include <cstdint>
 #include <chess.hpp>
 
+// material values of each piece type
+constexpr int16_t K_WT = 200, Q_WT = 9, R_WT = 5, B_WT = 3,
+                    N_WT = 3, P_WT = 1;
+
 // TODO: Define bounding scores for evaluation function
-constexpr std::int16_t MIN_SCORE = -100;
-constexpr std::int16_t MAX_SCORE = 100;
+constexpr std::int16_t MAX_SCORE = K_WT + Q_WT + 2*R_WT + 2*B_WT + 2*N_WT + 8*P_WT;
+constexpr std::int16_t MIN_SCORE = -MAX_SCORE;
 
 /**
  * @class GameState
@@ -60,10 +64,19 @@ class GameState
          * @return Score representing relative strategic advantage of the given board state.
          */
         std::int16_t evaluateBoard() const {
-            // material values of each piece type
-            constexpr int16_t K_WT = 200, Q_WT = 9, R_WT = 5, B_WT = 3,
-                              N_WT = 3, P_WT = 1;
+            // actual end game conditions, from current player's perspective
+            auto result = board_.isGameOver();
+            if (result.second == chess::GameResult::WIN) {
+                return MAX_SCORE;
+            }
+            else if (result.second == chess::GameResult::LOSE) {
+                return MIN_SCORE;
+            }
+            else { // draw
+                return 0;
+            }
 
+            // heuristic
             int wKings = board_.pieces(chess::PieceType::KING, chess::Color::WHITE).count(),
                 bKings = board_.pieces(chess::PieceType::KING, chess::Color::BLACK).count(),
                 wQueens = board_.pieces(chess::PieceType::QUEEN, chess::Color::WHITE).count(),
