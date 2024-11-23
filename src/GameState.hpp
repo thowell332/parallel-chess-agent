@@ -60,9 +60,37 @@ class GameState
          * @return Score representing relative strategic advantage of the given board state.
          */
         std::int16_t evaluateBoard() const {
-            // TODO: Implement function
-            return 0;
-        };
+            // material values of each piece type
+            constexpr int16_t K_WT = 200, Q_WT = 9, R_WT = 5, B_WT = 3,
+                              N_WT = 3, P_WT = 1;
+
+            int wKings = board_.pieces(chess::PieceType::KING, chess::Color::WHITE).count(),
+                bKings = board_.pieces(chess::PieceType::KING, chess::Color::BLACK).count(),
+                wQueens = board_.pieces(chess::PieceType::QUEEN, chess::Color::WHITE).count(),
+                bQueens = board_.pieces(chess::PieceType::QUEEN, chess::Color::BLACK).count(),
+                wRooks = board_.pieces(chess::PieceType::ROOK, chess::Color::WHITE).count(),
+                bRooks = board_.pieces(chess::PieceType::ROOK, chess::Color::BLACK).count(),
+                wBishops = board_.pieces(chess::PieceType::BISHOP, chess::Color::WHITE).count(),
+                bBishops = board_.pieces(chess::PieceType::BISHOP, chess::Color::BLACK).count(),
+                wKnights = board_.pieces(chess::PieceType::KNIGHT, chess::Color::WHITE).count(),
+                bKnights = board_.pieces(chess::PieceType::KNIGHT, chess::Color::BLACK).count(),
+                wPawns = board_.pieces(chess::PieceType::PAWN, chess::Color::WHITE).count(),
+                bPawns = board_.pieces(chess::PieceType::PAWN, chess::Color::BLACK).count();
+
+                int16_t materialScore = K_WT * (wKings - bKings) +
+                                        Q_WT * (wQueens - bQueens) +
+                                        R_WT * (wRooks - bRooks) +
+                                        B_WT * (wBishops - bBishops) +
+                                        N_WT * (wKnights - bKnights) +
+                                        P_WT * (wPawns - bPawns);
+
+            // TODO do mobility score, possibly
+            // chess::Movelist mvlist();
+            // mobilityScore = chess::movegen::legalmoves(mvlist, board_, );
+
+            int16_t who2move = (board_.sideToMove() == chess::Color::WHITE) ? 1 : -1;
+            return materialScore * who2move;
+        } //evaluateBoard
 };
 
 #endif // GAME_STATE_HPP

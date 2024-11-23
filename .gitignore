@@ -3,3 +3,6 @@ bin/
 
 ## LOCAL CONFIGURATION ##
 .vscode/
+
+## Back of napkin scratch work
+src/test/scratch.cpp
