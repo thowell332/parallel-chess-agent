@@ -32,7 +32,7 @@ chess::Move alphaBetaSeq(
 ) {
     // Return if depth exceeds maximum depth
     if (depth > maxDepth) {
-        return gameState.lastMoveScored();
+        return gameState.lastMoveScored<color>();
     }
 
     // Generate all legal moves from this board state
@@ -41,11 +41,11 @@ chess::Move alphaBetaSeq(
 
     // Return if there are no legal moves
     if (movelist.empty()) {
-        return gameState.lastMoveScored();
+        return gameState.lastMoveScored<color>();
     }
 
     chess::Move bestMove;
-    if (chess::Color(color) == gameState.board().sideToMove()) {
+    if (gameState.isMyTurn<color>()) {
         bestMove.setScore(MIN_SCORE);
         std::int16_t newAlpha = alpha;
         for (auto itr = movelist.begin(); itr != movelist.end(); ++itr) {

@@ -8,10 +8,10 @@
 #include <cstdint>
 #include <chess.hpp>
 
-// material values of each piece type
-constexpr int16_t K_WT = 200, Q_WT = 9, R_WT = 5, B_WT = 3,
-                    N_WT = 3, P_WT = 1;
+// Material values of each piece type
+constexpr std::int16_t K_WT = 200, Q_WT = 9, R_WT = 5, B_WT = 3, N_WT = 3, P_WT = 1;
 
+// Define bounds for evaluation function
 constexpr std::int16_t MAX_SCORE = K_WT + Q_WT + 2*R_WT + 2*B_WT + 2*N_WT + 8*P_WT;
 constexpr std::int16_t MIN_SCORE = -MAX_SCORE;
 
@@ -32,23 +32,33 @@ class GameState
         chess::Board board() const { return board_; }
 
         /**
-         * @brief Returns a copy of the last move with a score computed as the evaluation score of
-         * the current board position.
+         * @brief Accessor for the last move.
          */
-        chess::Move lastMoveScored() const {
-            auto returnMove = lastMove_;
-            returnMove.setScore(evaluateBoard());
-            return returnMove;
-        }
+        chess::Move lastMove() const { return lastMove_; }
 
         /**
          * @brief Updates the board state for a given move and stores the move in memory.
          * 
          * @param move Move to execute.
          */
-        void makeMove(const chess::Move & move) {
-            board_.makeMove(move);
-            lastMove_ = move;
+        void makeMove(const chess::Move & move);
+
+        /**
+         * @brief Returns true if it is the specified color's turn to move.
+         */
+        template <chess::Color::underlying color>
+        bool isMyTurn() const { return chess::Color(color) == board_.sideToMove(); }
+
+        /**
+         * @brief Evaluates the current board position and scores the last move.
+         */
+        template <chess::Color::underlying color>
+        chess::Move lastMoveScored() const {
+            std:int16_t activePlayerScore = evaluateBoard();
+            std::int16_t myScore = activePlayerScore ? isMyTurn<color>() : -activePlayerScore;
+            auto returnMove = lastMove_;
+            returnMove.setScore(myScore);
+            return returnMove;
         }
 
     private:
@@ -56,54 +66,14 @@ class GameState
         chess::Move lastMove_;
 
         /**
-         * @brief Assigns a score to the current board state.
+         * @brief Calculates a score for the current board position relative to the active player.
          * 
-         * @param board Current board state.
+         * @param board Current board position.
          * 
-         * @return Score representing relative strategic advantage of the given board state.
+         * @return Score representing relative strategic advantage of the given board position for the 
+         * active player.
          */
-        std::int16_t evaluateBoard() const {
-
-            // actual end game conditions, from current player's perspective
-            auto result = board_.isGameOver();
-            if (result.second == chess::GameResult::WIN) {
-                return MAX_SCORE;
-            }
-            else if (result.second == chess::GameResult::LOSE) {
-                return MIN_SCORE;
-            }
-            else if (result.second == chess::GameResult::DRAW) {
-                return 0;
-            }
-
-            // heuristic
-            int wKings = board_.pieces(chess::PieceType::KING, chess::Color::WHITE).count(),
-                bKings = board_.pieces(chess::PieceType::KING, chess::Color::BLACK).count(),
-                wQueens = board_.pieces(chess::PieceType::QUEEN, chess::Color::WHITE).count(),
-                bQueens = board_.pieces(chess::PieceType::QUEEN, chess::Color::BLACK).count(),
-                wRooks = board_.pieces(chess::PieceType::ROOK, chess::Color::WHITE).count(),
-                bRooks = board_.pieces(chess::PieceType::ROOK, chess::Color::BLACK).count(),
-                wBishops = board_.pieces(chess::PieceType::BISHOP, chess::Color::WHITE).count(),
-                bBishops = board_.pieces(chess::PieceType::BISHOP, chess::Color::BLACK).count(),
-                wKnights = board_.pieces(chess::PieceType::KNIGHT, chess::Color::WHITE).count(),
-                bKnights = board_.pieces(chess::PieceType::KNIGHT, chess::Color::BLACK).count(),
-                wPawns = board_.pieces(chess::PieceType::PAWN, chess::Color::WHITE).count(),
-                bPawns = board_.pieces(chess::PieceType::PAWN, chess::Color::BLACK).count();
-
-                int16_t materialScore = K_WT * (wKings - bKings) +
-                                        Q_WT * (wQueens - bQueens) +
-                                        R_WT * (wRooks - bRooks) +
-                                        B_WT * (wBishops - bBishops) +
-                                        N_WT * (wKnights - bKnights) +
-                                        P_WT * (wPawns - bPawns);
-
-            // TODO do mobility score, possibly
-            // chess::Movelist mvlist();
-            // mobilityScore = chess::movegen::legalmoves(mvlist, board_, );
-
-            int16_t who2move = (board_.sideToMove() == chess::Color::WHITE) ? 1 : -1;
-            return materialScore * who2move;
-        } //evaluateBoard
+        std::int16_t evaluateBoard() const;
 }; // class GameState
 
 #endif // GAME_STATE_HPP
