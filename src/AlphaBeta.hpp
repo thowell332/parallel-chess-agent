@@ -17,8 +17,7 @@ namespace Sequential {
      * @brief Sequential minimax algorithm with alpha-beta pruning.
      * 
      * @param GameNode Current node in the game tree.
-     * @param maxDepth Maximum depth to explore.
-     * @param depth Current depth in game tree.
+     * @param depth Depth to explore in the game tree.
      * @param alpha Best value that the maximizer can guarantee at this level or above.
      * @param beta Best value that the minimizer can guarantee at this level or above.
      * @param isMaximizingPlayer Indicates whether the active player is the maximizing player.
@@ -27,8 +26,7 @@ namespace Sequential {
      */
     chess::Move alphaBeta(
         const GameNode& gameNode,
-        std::uint8_t maxDepth,
-        std::uint8_t depth = 0,
+        std::uint8_t depth,
         std::int16_t alpha = EvalConstants::MIN_SCORE,
         std::int16_t beta = EvalConstants::MAX_SCORE,
         bool isMaximizingPlayer = true
