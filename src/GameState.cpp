@@ -4,27 +4,41 @@
 
 #include "GameState.hpp"
 
-void
-GameState::makeMove(const chess::Move & move) {
+GameNode::GameNode(chess::Board board, chess::Move move)
+    : board_(board)
+    , lastMove_(move)
+    , childrenInitialized_(false)
+{
+    // Execute move on the board position of the parent node
     board_.makeMove(move);
-    lastMove_ = move;
+}
+
+const std::vector<std::unique_ptr<GameNode>>&
+GameNode::children() const
+{
+    // Only construct child nodes if they have not already been initialized
+    if (!childrenInitialized_) {
+        // Generate all legal moves and construct child nodes
+        chess::Movelist movelist;
+        chess::movegen::legalmoves(movelist, board_);
+        for (const auto& nextMove : movelist) {
+            children_.emplace_back(std::make_unique<GameNode>(board_, nextMove));
+        }
+        childrenInitialized_ = true;
+    }
+    return children_;
 }
 
 std::int16_t
-GameState::evaluateBoard() const {
-    // actual end game conditions, from current player's perspective
+GameNode::evaluateBoard() const
+{
+    // Evaluate end game conditions relative to the active player
     auto result = board_.isGameOver();
-    if (result.second == chess::GameResult::WIN) {
-        return MAX_SCORE;
-    }
-    else if (result.second == chess::GameResult::LOSE) {
-        return MIN_SCORE;
-    }
-    else if (result.second == chess::GameResult::DRAW) {
-        return 0;
-    }
+    if (result.second == chess::GameResult::WIN)  return MAX_SCORE;
+    if (result.second == chess::GameResult::LOSE) return MIN_SCORE;
+    if (result.second == chess::GameResult::DRAW) return 0;
 
-    // heuristic
+    // Compute material score
     std::int16_t wKings = board_.pieces(chess::PieceType::KING, chess::Color::WHITE).count(),
         bKings = board_.pieces(chess::PieceType::KING, chess::Color::BLACK).count(),
         wQueens = board_.pieces(chess::PieceType::QUEEN, chess::Color::WHITE).count(),

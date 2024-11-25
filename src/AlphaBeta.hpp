@@ -10,11 +10,12 @@
 #include <chess.hpp>
 #include <algorithm>
 #include <cstdint>
+#include <exception>
 
 /**
  * @brief Sequential minimax algorithm with alpha-beta pruning.
  * 
- * @param gameState Current game state.
+ * @param GameNode Current node in the game tree.
  * @param maxDepth Maximum depth to explore.
  * @param depth Current depth in game tree.
  * @param alpha Best value that the maximizer can guarantee at this level or above.
@@ -24,56 +25,60 @@
  */
 template <chess::Color::underlying color>
 chess::Move alphaBetaSeq(
-    const GameState & gameState,
-    int maxDepth,
-    int depth = 0,
+    const GameNode& gameNode,
+    std::uint8_t maxDepth,
+    std::uint8_t depth = 0,
     std::int16_t alpha = MIN_SCORE,
     std::int16_t beta = MAX_SCORE
 ) {
-    // Return if depth exceeds maximum depth
-    if (depth > maxDepth) {
-        return gameState.lastMoveScored<color>();
+    // Verify input parameters
+    if (maxDepth == 0) {
+        throw std::invalid_argument("Maximum depth must be nonzero.");
+    }
+    if (alpha < MIN_SCORE || alpha > MAX_SCORE) {
+        throw std::out_of_range("Alpha out of bounds.");
+    }
+    if (beta < MIN_SCORE || beta > MAX_SCORE) {
+        throw std::out_of_range("Beta out of bounds.");
     }
 
-    // Generate all legal moves from this board state
-    chess::Movelist movelist;
-    chess::movegen::legalmoves(movelist, gameState.board());
-
-    // Return if there are no legal moves
-    if (movelist.empty()) {
-        return gameState.lastMoveScored<color>();
+    // Return if depth reaches maximum depth or there are no legal moves
+    if (depth >= maxDepth || gameNode.children().empty()) {
+        auto move = gameNode.lastMove();
+        auto score = gameNode.scoreLastMove<color>();
+        move.setScore(score);
+        return move;
     }
 
     chess::Move bestMove;
-    if (gameState.isMyTurn<color>()) {
+    // Maximizing player seeks the highest score
+    if (gameNode.isMyTurn<color>()) {
         bestMove.setScore(MIN_SCORE);
-        std::int16_t newAlpha = alpha;
-        for (auto itr = movelist.begin(); itr != movelist.end(); ++itr) {
-            auto newGameState = gameState;
-            newGameState.makeMove(*itr);
-            auto bestNextMove = alphaBetaSeq<color>(newGameState, depth + 1, maxDepth, newAlpha, beta);
-            if (bestNextMove.score() > bestMove.score()) {
-                bestMove = *itr;
-                bestMove.setScore(bestNextMove.score());
+        for (const auto& child : gameNode.children()) {
+            auto move = alphaBetaSeq<color>(*child, maxDepth, depth + 1, alpha, beta);
+            auto score = move.score();
+            if (score > bestMove.score()) {
+                bestMove = child->lastMove();
+                bestMove.setScore(score);
             }
-            newAlpha = std::max(newAlpha, bestMove.score());
-            if (beta <= newAlpha) {
+            alpha = std::max(alpha, bestMove.score());
+            if (beta <= alpha) {
                 break;
             }
         }
-    } else {
+    }
+    // Minimizing player seeks the lowest score
+    else {
         bestMove.setScore(MAX_SCORE);
-        std::int16_t newBeta = beta;
-        for (auto itr = movelist.begin(); itr != movelist.end(); ++itr) {
-            auto newGameState = gameState;
-            newGameState.makeMove(*itr);
-            auto bestNextMove = alphaBetaSeq<color>(newGameState, depth + 1, maxDepth, alpha, newBeta);
-            if (bestNextMove.score() < bestMove.score()) {
-                bestMove = *itr;
-                bestMove.setScore(bestNextMove.score());
+        for (const auto& child : gameNode.children()) {
+            auto move = alphaBetaSeq<color>(*child, maxDepth, depth + 1, alpha, beta);
+            auto score = move.score();
+            if (score < bestMove.score()) {
+                bestMove = child->lastMove();
+                bestMove.setScore(score);
             }
-            newBeta = std::min(newBeta, bestMove.score());
-            if (newBeta <= alpha) {
+            beta = std::min(beta, bestMove.score());
+            if (beta <= alpha) {
                 break;
             }
         }

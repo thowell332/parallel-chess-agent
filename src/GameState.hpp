@@ -5,8 +5,10 @@
 #ifndef GAME_STATE_HPP
 #define GAME_STATE_HPP
 
-#include <cstdint>
 #include <chess.hpp>
+
+#include <cstdint>
+#include <memory>
 
 // Material values of each piece type
 constexpr std::int16_t K_WT = 200, Q_WT = 9, R_WT = 5, B_WT = 3, N_WT = 3, P_WT = 1;
@@ -16,32 +18,45 @@ constexpr std::int16_t MAX_SCORE = K_WT + Q_WT + 2*R_WT + 2*B_WT + 2*N_WT + 8*P_
 constexpr std::int16_t MIN_SCORE = -MAX_SCORE;
 
 /**
- * @class GameState
- * @brief Describes the current game state by storing the board position and last move.
+ * @class GameNode
+ * @brief Represents a node in the game tree by storing the board position, last move, and a vector
+ * of child nodes constructed from the set of legal moves to be considered from this node.
  */
-class GameState
+class GameNode
 {
     public:
-        // Default constructor and copy constructor
-        GameState() = default;
-        GameState(const GameState&) = default;
+        // Delete copy constructor and assignment operator
+        GameNode(const GameNode&) = delete;
+        GameNode& operator=(const GameNode&) = delete;
+
+        /**
+         * @brief Constructor used only for the root node.
+         */
+        GameNode() : board_(), lastMove_(), childrenInitialized_(false) {}
+
+        /**
+         * @brief Constructor for all non-root nodes. 
+         * 
+         * @param board Board position of the parent node.
+         * @param move Move to execute and store in this child node.
+         */
+        GameNode(chess::Board board, chess::Move move);
 
         /**
          * @brief Accessor for the current board position.
          */
-        chess::Board board() const { return board_; }
+        const chess::Board& board() const { return board_; }
 
         /**
          * @brief Accessor for the last move.
          */
-        chess::Move lastMove() const { return lastMove_; }
+        const chess::Move& lastMove() const { return lastMove_; }
 
         /**
-         * @brief Updates the board state for a given move and stores the move in memory.
-         * 
-         * @param move Move to execute.
+         * @brief Accessor for number of child nodes with lazy initialization. Child nodes are only
+         * initialized the first time that this accessor is called.
          */
-        void makeMove(const chess::Move & move);
+        const std::vector<std::unique_ptr<GameNode>>& children() const;
 
         /**
          * @brief Returns true if it is the specified color's turn to move.
@@ -50,30 +65,26 @@ class GameState
         bool isMyTurn() const { return chess::Color(color) == board_.sideToMove(); }
 
         /**
-         * @brief Evaluates the current board position and scores the last move.
+         * @brief Evaluates the current board position and scores the last move relative to the
+         * specified color.
          */
         template <chess::Color::underlying color>
-        chess::Move lastMoveScored() const {
-            std:int16_t activePlayerScore = evaluateBoard();
-            std::int16_t myScore = activePlayerScore ? isMyTurn<color>() : -activePlayerScore;
-            auto returnMove = lastMove_;
-            returnMove.setScore(myScore);
-            return returnMove;
+        std::int16_t scoreLastMove() const {
+            std::int16_t activePlayerScore = evaluateBoard();
+            std::int16_t myScore = isMyTurn<color>() ? activePlayerScore: -1 * activePlayerScore;
+            return myScore;
         }
 
     private:
         chess::Board board_;
         chess::Move lastMove_;
+        mutable bool childrenInitialized_;
+        mutable std::vector<std::unique_ptr<GameNode>> children_;
 
         /**
          * @brief Calculates a score for the current board position relative to the active player.
-         * 
-         * @param board Current board position.
-         * 
-         * @return Score representing relative strategic advantage of the given board position for the 
-         * active player.
          */
         std::int16_t evaluateBoard() const;
-}; // class GameState
+}; // class GameNode
 
 #endif // GAME_STATE_HPP
