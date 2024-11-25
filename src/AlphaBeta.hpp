@@ -6,8 +6,8 @@
 #define ALPHA_BETA_HPP
 
 #include "GameNode.hpp"
-
 #include <chess.hpp>
+
 #include <algorithm>
 #include <cstdint>
 #include <exception>
@@ -53,7 +53,7 @@ chess::Move alphaBetaSeq(
     chess::Move bestMove;
     // Maximizing player seeks the highest score
     if (gameNode.isMyTurn<color>()) {
-        bestMove.setScore(MIN_SCORE);
+        bestMove.setScore(MIN_SCORE - 1);
         for (const auto& child : gameNode.children()) {
             auto move = alphaBetaSeq<color>(*child, maxDepth, depth + 1, alpha, beta);
             auto score = move.score();
@@ -69,7 +69,7 @@ chess::Move alphaBetaSeq(
     }
     // Minimizing player seeks the lowest score
     else {
-        bestMove.setScore(MAX_SCORE);
+        bestMove.setScore(MAX_SCORE + 1);
         for (const auto& child : gameNode.children()) {
             auto move = alphaBetaSeq<color>(*child, maxDepth, depth + 1, alpha, beta);
             auto score = move.score();

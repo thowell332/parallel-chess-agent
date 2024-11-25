@@ -1,7 +1,7 @@
 CC = g++
 SRC = src
 BIN = bin
-CPPFLAGS = -Iexternal -std=c++17
+CPPFLAGS = -Iexternal -std=c++17 -g
 HEADERS = $(SRC)/AlphaBeta.hpp $(SRC)/GameNode.hpp
 OBJECTS = $(BIN)/AlphaBetaTest.o $(BIN)/GameNode.o
 

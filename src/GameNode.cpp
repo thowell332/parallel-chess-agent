@@ -6,11 +6,10 @@
 
 GameNode::GameNode(chess::Board board, chess::Move move)
     : board_(board)
-    , lastMove_(move)
     , childrenInitialized_(false)
 {
     // Execute move on the board position of the parent node
-    board_.makeMove(move);
+    makeMove(move);
 }
 
 const std::vector<std::unique_ptr<GameNode>>&
@@ -27,6 +26,18 @@ GameNode::children() const
         childrenInitialized_ = true;
     }
     return children_;
+}
+
+void
+GameNode::makeMove(const chess::Move& move)
+{
+    // Update board position and last move
+    board_.makeMove(move);
+    lastMove_ = move;
+
+    // Clear children and set flag back to false
+    childrenInitialized_ = false;
+    children_.clear();
 }
 
 std::int16_t

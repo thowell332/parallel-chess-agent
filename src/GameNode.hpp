@@ -9,6 +9,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <string_view>
 
 // Material values of each piece type
 constexpr std::int16_t K_WT = 200, Q_WT = 9, R_WT = 5, B_WT = 3, N_WT = 3, P_WT = 1;
@@ -30,9 +31,12 @@ class GameNode
         GameNode& operator=(const GameNode&) = delete;
 
         /**
-         * @brief Constructor used only for the root node.
+         * @brief Constructor used only for the root node of a new game tree.
+         * 
+         * @param fen FEN string representation of the desired starting board position.
          */
-        GameNode() : board_(), lastMove_(), childrenInitialized_(false) {}
+        GameNode(std::string_view fen = chess::constants::STARTPOS)
+            : board_(fen), lastMove_(), childrenInitialized_(false) {}
 
         /**
          * @brief Constructor for all non-root nodes. 
@@ -57,6 +61,11 @@ class GameNode
          * initialized the first time that this accessor is called.
          */
         const std::vector<std::unique_ptr<GameNode>>& children() const;
+        
+        /**
+         * @brief Execute given move on the current board position and store last move.
+         */
+        void makeMove(const chess::Move& move);
 
         /**
          * @brief Returns true if it is the specified color's turn to move.
