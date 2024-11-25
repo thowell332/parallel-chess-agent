@@ -1,8 +1,8 @@
 /**
- * @file GameState.cpp
+ * @file GameNode.cpp
  */
 
-#include "GameState.hpp"
+#include "GameNode.hpp"
 
 GameNode::GameNode(chess::Board board, chess::Move move)
     : board_(board)

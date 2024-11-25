@@ -5,7 +5,7 @@
 #ifndef ALPHA_BETA_HPP
 #define ALPHA_BETA_HPP
 
-#include "GameState.hpp"
+#include "GameNode.hpp"
 
 #include <chess.hpp>
 #include <algorithm>

@@ -1,9 +1,9 @@
 /**
- * @file GameState.hpp
+ * @file GameNode.hpp
  */
 
-#ifndef GAME_STATE_HPP
-#define GAME_STATE_HPP
+#ifndef GAME_NODE_HPP
+#define GAME_NODE_HPP
 
 #include <chess.hpp>
 
@@ -87,4 +87,4 @@ class GameNode
         std::int16_t evaluateBoard() const;
 }; // class GameNode
 
-#endif // GAME_STATE_HPP
+#endif // GAME_NODE_HPP
