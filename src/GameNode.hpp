@@ -11,12 +11,14 @@
 #include <memory>
 #include <string_view>
 
-// Material values of each piece type
-constexpr std::int16_t K_WT = 200, Q_WT = 9, R_WT = 5, B_WT = 3, N_WT = 3, P_WT = 1;
+namespace EvalConstants {
+    // Material values of each piece type
+    constexpr std::int16_t K_WT = 200, Q_WT = 9, R_WT = 5, B_WT = 3, N_WT = 3, P_WT = 1;
 
-// Define bounds for evaluation function
-constexpr std::int16_t MAX_SCORE = K_WT + Q_WT + 2*R_WT + 2*B_WT + 2*N_WT + 8*P_WT;
-constexpr std::int16_t MIN_SCORE = -MAX_SCORE;
+    // Define bounds for evaluation function
+    constexpr std::int16_t MAX_SCORE = K_WT + Q_WT + 2*R_WT + 2*B_WT + 2*N_WT + 8*P_WT;
+    constexpr std::int16_t MIN_SCORE = -MAX_SCORE;
+} // namespace EvalConstants
 
 /**
  * @class GameNode
@@ -47,6 +49,11 @@ class GameNode
         GameNode(chess::Board board, chess::Move move);
 
         /**
+         * @brief Default destructor.
+         */
+        ~GameNode() = default;
+
+        /**
          * @brief Accessor for the current board position.
          */
         const chess::Board& board() const { return board_; }
@@ -68,32 +75,15 @@ class GameNode
         void makeMove(const chess::Move& move);
 
         /**
-         * @brief Returns true if it is the specified color's turn to move.
+         * @brief Calculates a score for the current board position relative to the active player.
          */
-        template <chess::Color::underlying color>
-        bool isMyTurn() const { return chess::Color(color) == board_.sideToMove(); }
-
-        /**
-         * @brief Evaluates the current board position and scores the last move relative to the
-         * specified color.
-         */
-        template <chess::Color::underlying color>
-        std::int16_t scoreLastMove() const {
-            std::int16_t activePlayerScore = evaluateBoard();
-            std::int16_t myScore = isMyTurn<color>() ? activePlayerScore: -1 * activePlayerScore;
-            return myScore;
-        }
+        std::int16_t evaluateBoard() const;
 
     private:
         chess::Board board_;
         chess::Move lastMove_;
         mutable bool childrenInitialized_;
         mutable std::vector<std::unique_ptr<GameNode>> children_;
-
-        /**
-         * @brief Calculates a score for the current board position relative to the active player.
-         */
-        std::int16_t evaluateBoard() const;
 }; // class GameNode
 
 #endif // GAME_NODE_HPP

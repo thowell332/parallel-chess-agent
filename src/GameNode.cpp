@@ -45,11 +45,11 @@ GameNode::evaluateBoard() const
 {
     // Evaluate end game conditions relative to the active player
     auto result = board_.isGameOver();
-    if (result.second == chess::GameResult::WIN)  return MAX_SCORE;
-    if (result.second == chess::GameResult::LOSE) return MIN_SCORE;
+    if (result.second == chess::GameResult::WIN)  return EvalConstants::MAX_SCORE;
+    if (result.second == chess::GameResult::LOSE) return EvalConstants::MIN_SCORE;
     if (result.second == chess::GameResult::DRAW) return 0;
 
-    // Compute material score
+    // Number of pieces for each color
     std::int16_t wKings = board_.pieces(chess::PieceType::KING, chess::Color::WHITE).count(),
         bKings = board_.pieces(chess::PieceType::KING, chess::Color::BLACK).count(),
         wQueens = board_.pieces(chess::PieceType::QUEEN, chess::Color::WHITE).count(),
@@ -63,18 +63,20 @@ GameNode::evaluateBoard() const
         wPawns = board_.pieces(chess::PieceType::PAWN, chess::Color::WHITE).count(),
         bPawns = board_.pieces(chess::PieceType::PAWN, chess::Color::BLACK).count();
 
+    // Compute material score for white
     std::int16_t materialScore =
-        K_WT * (wKings - bKings) +
-        Q_WT * (wQueens - bQueens) +
-        R_WT * (wRooks - bRooks) +
-        B_WT * (wBishops - bBishops) +
-        N_WT * (wKnights - bKnights) +
-        P_WT * (wPawns - bPawns);
+        EvalConstants::K_WT * (wKings - bKings) +
+        EvalConstants::Q_WT * (wQueens - bQueens) +
+        EvalConstants::R_WT * (wRooks - bRooks) +
+        EvalConstants::B_WT * (wBishops - bBishops) +
+        EvalConstants::N_WT * (wKnights - bKnights) +
+        EvalConstants::P_WT * (wPawns - bPawns);
 
     // TODO do mobility score, possibly
     // chess::Movelist mvlist();
     // mobilityScore = chess::movegen::legalmoves(mvlist, board_, );
 
+    // Negate material score if black to move
     std::int16_t whiteToMove = (board_.sideToMove() == chess::Color::WHITE) ? 1 : -1;
     return materialScore * whiteToMove;
 }
