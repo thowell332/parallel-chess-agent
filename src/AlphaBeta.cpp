@@ -78,7 +78,7 @@ chess::Move alphaBeta(
         throw std::out_of_range("Beta out of bounds.");
     }
 
-    // TODO: Implement parallel algorithm with OpenMP
+    // TODO: Implementation with local alpha and beta values to avoid critical
     // Return if the maximum depth has been explored or there are no legal moves remaining
     if (depth == 0 || gameNode.children().empty()) {
         auto move = gameNode.lastMove();
