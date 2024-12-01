@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <exception>
+#include <omp.h>
 
 // Tag dispatching for algorithm execution policy
 struct SequentialTag {};
