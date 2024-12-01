@@ -28,7 +28,7 @@ $(BIN)/AlphaBetaTest.o: $(SRC)/test/AlphaBetaTest.cpp $(HEADERS)
 	mkdir -p $(BIN)
 	${CC} $(CPPFLAGS) $< -c -o $@
 
-$(BIN)/ParallelAlphaBetaTest.o: $(SRC)/test/AlphaBetaTest.cpp $(HEADERS)
+$(BIN)/ParallelAlphaBetaTest.o: $(SRC)/test/ParallelAlphaBetaTest.cpp $(HEADERS)
 	mkdir -p $(BIN)
 	${CC} $(CPPFLAGS) $< -c -o $@
 
