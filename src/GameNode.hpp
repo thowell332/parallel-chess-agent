@@ -11,7 +11,7 @@
 #include <memory>
 #include <string_view>
 
-namespace EvalConstants {
+namespace eval_constants {
     // Material values of each piece type
     constexpr std::int16_t K_WT = 200, Q_WT = 9, R_WT = 5, B_WT = 3, N_WT = 3, P_WT = 1;
 

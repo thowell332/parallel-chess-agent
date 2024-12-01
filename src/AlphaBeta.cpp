@@ -4,7 +4,8 @@
 
 #include "AlphaBeta.hpp"
 
-chess::Move Sequential::alphaBeta(
+chess::Move alphaBeta(
+    const SequentialTag& policy,
     const GameNode& gameNode,
     std::uint8_t depth,
     std::int16_t alpha,
@@ -12,10 +13,10 @@ chess::Move Sequential::alphaBeta(
     bool isMaximizingPlayer
 ) {
     // Verify input parameters
-    if (alpha < EvalConstants::MIN_SCORE || alpha > EvalConstants::MAX_SCORE) {
+    if (alpha < eval_constants::MIN_SCORE || alpha > eval_constants::MAX_SCORE) {
         throw std::out_of_range("Alpha out of bounds.");
     }
-    if (beta < EvalConstants::MIN_SCORE || beta > EvalConstants::MAX_SCORE) {
+    if (beta < eval_constants::MIN_SCORE || beta > eval_constants::MAX_SCORE) {
         throw std::out_of_range("Beta out of bounds.");
     }
 
@@ -30,9 +31,9 @@ chess::Move Sequential::alphaBeta(
 
     chess::Move bestMove;
     if (isMaximizingPlayer) {
-        bestMove.setScore(EvalConstants::MIN_SCORE - 1);
+        bestMove.setScore(eval_constants::MIN_SCORE - 1);
         for (const auto& child : gameNode.children()) {
-            auto move = Sequential::alphaBeta(*child, depth - 1, alpha, beta, false);
+            auto move = alphaBeta(SequentialTag{}, *child, depth - 1, alpha, beta, false);
             auto score = move.score();
             if (score > bestMove.score()) {
                 bestMove = child->lastMove();
@@ -44,9 +45,9 @@ chess::Move Sequential::alphaBeta(
             }
         }
     } else {
-        bestMove.setScore(EvalConstants::MAX_SCORE + 1);
+        bestMove.setScore(eval_constants::MAX_SCORE + 1);
         for (const auto& child : gameNode.children()) {
-            auto move = Sequential::alphaBeta(*child, depth - 1, alpha, beta, true);
+            auto move = alphaBeta(SequentialTag{}, *child, depth - 1, alpha, beta, true);
             auto score = move.score();
             if (score < bestMove.score()) {
                 bestMove = child->lastMove();
@@ -59,4 +60,24 @@ chess::Move Sequential::alphaBeta(
         }
     }
     return bestMove;
+}
+
+chess::Move alphaBeta(
+    const SharedMemoryTag& policy,
+    const GameNode& gameNode,
+    std::uint8_t depth,
+    std::int16_t alpha,
+    std::int16_t beta,
+    bool isMaximizingPlayer
+) {
+    // Verify input parameters
+    if (alpha < eval_constants::MIN_SCORE || alpha > eval_constants::MAX_SCORE) {
+        throw std::out_of_range("Alpha out of bounds.");
+    }
+    if (beta < eval_constants::MIN_SCORE || beta > eval_constants::MAX_SCORE) {
+        throw std::out_of_range("Beta out of bounds.");
+    }
+
+    // TODO: Implement parallel algorithm with OpenMP
+    return chess::Move{};
 }
