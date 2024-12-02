@@ -15,6 +15,7 @@
 
 // Tag dispatching for algorithm execution policy
 struct SequentialTag {};
+struct NaiveSharedMemoryTag {};
 struct SharedMemoryTag {};
 struct DistributedMemoryTag {};
 
@@ -41,7 +42,20 @@ chess::Move alphaBeta(
 
 /**
  * @brief Parallel shared-memory implementation of the minimax algorithm
- * with alpha-beta pruning.
+ * with alpha-beta pruning using shared alpha and beta values
+ */
+chess::Move alphaBeta(
+    [[maybe_unused]] const NaiveSharedMemoryTag& policy,
+    const GameNode& gameNode,
+    std::uint8_t depth,
+    std::int16_t alpha = eval_constants::MIN_SCORE,
+    std::int16_t beta = eval_constants::MAX_SCORE,
+    bool isMaximizingPlayer = true
+);
+
+/**
+ * @brief Parallel shared-memory implementation of the minimax algorithm
+ * with alpha-beta pruning using local alpha and beta values
  */
 chess::Move alphaBeta(
     [[maybe_unused]] const SharedMemoryTag& policy,
