@@ -4,6 +4,8 @@
 
 #include "AlphaBeta.hpp"
 
+#include <unordered_map>
+
 chess::Move alphaBeta(
     const SequentialTag& policy,
     const GameNode& gameNode,
@@ -92,7 +94,6 @@ chess::Move alphaBeta(
     if (isMaximizingPlayer) {
         bestMove.setScore(eval_constants::MIN_SCORE - 1);
 
-        // TODO TODO TODO! Clustering
         #pragma omp parallel for
         for (const auto& child : gameNode.children()) {
             if (beta <= alpha) {
@@ -131,6 +132,8 @@ chess::Move alphaBeta(
     return bestMove;
 } // Naive
 
+
+// clustering TODO
 chess::Move alphaBeta(
     const SharedMemoryTag& policy,
     const GameNode& gameNode,

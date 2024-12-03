@@ -1,3 +1,7 @@
+/**
+ * @file TimingTests.cpp
+ */
+
 #include "../AlphaBeta.hpp"
 #include <chess.hpp>
 #include <chrono>
@@ -30,13 +34,13 @@ constexpr int TRIALS = 3, DEPTH = 6;
 int main(int argc, char *argv[])
 {
     // TODO: Implement unit tests and timing tests
-    auto seq = depthTimingTest<SequentialTag>(TRIALS, DEPTH);
-    std::cout << "Sequential time: " << seq.first << '\n'
-              << "Sequential move: " << seq.second << std::endl;
+    auto seqRes = depthTimingTest<SequentialTag>(TRIALS, DEPTH);
+    std::cout << "Sequential time: " << seqRes.first << '\n'
+              << "Sequential move: " << seqRes.second << std::endl;
 
 
-    auto naive = depthTimingTest<NaiveSharedMemoryTag>(TRIALS, DEPTH);
-    std::cout << "Naive Shmem time: " << naive.first << '\n'
-              << "Naive Shmem move: " << naive.second << std::endl;
+    auto naiveRes = depthTimingTest<NaiveSharedMemoryTag>(TRIALS, DEPTH);
+    std::cout << "Naive Shmem time: " << naiveRes.first << '\n'
+              << "Naive Shmem move: " << naiveRes.second << std::endl;
 
 }
