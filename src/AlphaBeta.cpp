@@ -92,8 +92,12 @@ chess::Move alphaBeta(
     if (isMaximizingPlayer) {
         bestMove.setScore(eval_constants::MIN_SCORE - 1);
 
+        // TODO TODO TODO! Clustering
         #pragma omp parallel for
         for (const auto& child : gameNode.children()) {
+            if (beta <= alpha) {
+                continue;
+            }
             auto move = alphaBeta(SequentialTag{}, *child, depth - 1, alpha, beta, false);
             auto score = move.score();
             if (score > bestMove.score()) {
@@ -104,15 +108,15 @@ chess::Move alphaBeta(
             #pragma omp critical
             alpha = std::max(alpha, bestMove.score());
             // must be continue instead of break bc parallel
-            if (beta <= alpha) {
-                continue;
-            }
         }
     } else {
         bestMove.setScore(eval_constants::MAX_SCORE + 1);
 
         #pragma omp parallel for
         for (const auto& child : gameNode.children()) {
+            if (beta <= alpha) {
+                continue;
+            }
             auto move = alphaBeta(SequentialTag{}, *child, depth - 1, alpha, beta, true);
             auto score = move.score();
             if (score < bestMove.score()) {
@@ -122,11 +126,6 @@ chess::Move alphaBeta(
 
             #pragma omp critical
             beta = std::min(beta, bestMove.score());
-
-            // must be continue instead of break bc parallel
-            if (beta <= alpha) {
-                continue;
-            }
         }
     }
     return bestMove;
@@ -190,9 +189,7 @@ chess::Move alphaBeta(
                 bestMove = child->lastMove();
                 bestMove.setScore(score);
             }
-
             localBeta = std::min(localBeta, bestMove.score());
-
             // must be continue instead of break bc parallel
             if (localBeta <= localAlpha) {
                 continue;
