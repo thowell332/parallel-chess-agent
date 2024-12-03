@@ -1,10 +1,9 @@
 #include "../AlphaBeta.hpp"
 #include <chess.hpp>
-
 #include <chrono>
 
 template<typename T>
-std::pair<double, chess::Move> timingTest(int trials, int depth)
+std::pair<double, chess::Move> depthTimingTest(int trials, int depth)
 {
     // the actual starting position
     constexpr auto startPos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
@@ -27,16 +26,16 @@ std::pair<double, chess::Move> timingTest(int trials, int depth)
 }
 
 
-constexpr int TRIALS = 1, DEPTH = 5;
+constexpr int TRIALS = 3, DEPTH = 6;
 int main(int argc, char *argv[])
 {
     // TODO: Implement unit tests and timing tests
-    auto seq = timingTest<SequentialTag>(TRIALS, DEPTH);
+    auto seq = depthTimingTest<SequentialTag>(TRIALS, DEPTH);
     std::cout << "Sequential time: " << seq.first << '\n'
               << "Sequential move: " << seq.second << std::endl;
 
 
-    auto naive = timingTest<NaiveSharedMemoryTag>(TRIALS, DEPTH);
+    auto naive = depthTimingTest<NaiveSharedMemoryTag>(TRIALS, DEPTH);
     std::cout << "Naive Shmem time: " << naive.first << '\n'
               << "Naive Shmem move: " << naive.second << std::endl;
 
