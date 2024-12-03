@@ -6,9 +6,9 @@ HEADERS = $(SRC)/AlphaBeta.hpp $(SRC)/GameNode.hpp
 # no main .o files, main .o file linked by name in recipe
 OBJECTS = $(BIN)/AlphaBeta.o $(BIN)/GameNode.o
 
-all: $(BIN)/AlphaBetaTest $(BIN)/ParallelAlphaBetaTest $(BIN)/NaiveParallelAlphaBetaTest
+all: $(BIN)/AlphaBetaTest $(BIN)/ParallelAlphaBetaTest $(BIN)/NaiveParallelAlphaBetaTest $(BIN)/TimingTests
 
-#####################################BIN########################################
+####################################[BIN]#######################################
 $(BIN)/AlphaBetaTest: $(OBJECTS) $(BIN)/AlphaBetaTest.o
 	mkdir -p $(BIN)
 	$(CC) $(CPPFLAGS) $^ -o $@
@@ -18,6 +18,10 @@ $(BIN)/ParallelAlphaBetaTest: $(OBJECTS) $(BIN)/ParallelAlphaBetaTest.o
 	$(CC) $(CPPFLAGS) $^ -o $@
 
 $(BIN)/NaiveParallelAlphaBetaTest: $(OBJECTS) $(BIN)/NaiveParallelAlphaBetaTest.o
+	mkdir -p $(BIN)
+	$(CC) $(CPPFLAGS) $^ -o $@
+
+$(BIN)/TimingTests: $(OBJECTS) $(BIN)/TimingTests.o
 	mkdir -p $(BIN)
 	$(CC) $(CPPFLAGS) $^ -o $@
 ################################################################################
@@ -39,6 +43,10 @@ $(BIN)/ParallelAlphaBetaTest.o: $(SRC)/test/ParallelAlphaBetaTest.cpp $(HEADERS)
 	${CC} $(CPPFLAGS) $< -c -o $@
 
 $(BIN)/NaiveParallelAlphaBetaTest.o: $(SRC)/test/NaiveParallelAlphaBetaTest.cpp $(HEADERS)
+	mkdir -p $(BIN)
+	${CC} $(CPPFLAGS) $< -c -o $@
+
+$(BIN)/TimingTests.o: $(SRC)/test/TimingTests.cpp $(HEADERS)
 	mkdir -p $(BIN)
 	${CC} $(CPPFLAGS) $< -c -o $@
 

@@ -129,7 +129,7 @@ chess::Move alphaBeta(
         }
     }
     return bestMove;
-}
+} // Naive
 
 chess::Move alphaBeta(
     const SharedMemoryTag& policy,
@@ -175,7 +175,6 @@ chess::Move alphaBeta(
             }
 
             localAlpha = std::max(localAlpha, bestMove.score());
-            // must be continue instead of break bc parallel
         }
     } else {
         bestMove.setScore(eval_constants::MAX_SCORE + 1);
