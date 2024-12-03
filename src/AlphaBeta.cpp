@@ -164,6 +164,9 @@ chess::Move alphaBeta(
         #pragma omp parallel for
         for (const auto& child : gameNode.children()) {
             auto localAlpha = alpha, localBeta = beta;
+            if (localBeta <= localAlpha) {
+                continue;
+            }
             auto move = alphaBeta(SequentialTag{}, *child, depth - 1, localAlpha, localBeta, false);
             auto score = move.score();
             if (score > bestMove.score()) {
@@ -173,9 +176,6 @@ chess::Move alphaBeta(
 
             localAlpha = std::max(localAlpha, bestMove.score());
             // must be continue instead of break bc parallel
-            if (localBeta <= localAlpha) {
-                continue;
-            }
         }
     } else {
         bestMove.setScore(eval_constants::MAX_SCORE + 1);
@@ -183,6 +183,9 @@ chess::Move alphaBeta(
         #pragma omp parallel for
         for (const auto& child : gameNode.children()) {
             auto localAlpha = alpha, localBeta = beta;
+            if (localBeta <= localAlpha) {
+                continue;
+            }
             auto move = alphaBeta(SequentialTag{}, *child, depth - 1, localAlpha, localBeta, true);
             auto score = move.score();
             if (score < bestMove.score()) {
@@ -191,9 +194,6 @@ chess::Move alphaBeta(
             }
             localBeta = std::min(localBeta, bestMove.score());
             // must be continue instead of break bc parallel
-            if (localBeta <= localAlpha) {
-                continue;
-            }
         }
     }
     return bestMove;
