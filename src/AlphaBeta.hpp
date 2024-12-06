@@ -11,7 +11,13 @@
 #include <algorithm>
 #include <cstdint>
 #include <exception>
-#include <omp.h>
+
+// Return type for alpha-beta pruning algorithms
+struct AlphaBetaResult
+{
+    chess::Move bestMove;
+    size_t nodesExplored;
+};
 
 // Tag dispatching for algorithm execution policy
 struct SequentialTag {};
@@ -31,39 +37,74 @@ struct DistributedMemoryTag {};
  * 
  * @return Best move that the maximizing player can make with associated score.
  */
-chess::Move alphaBeta(
-    [[maybe_unused]] const SequentialTag& policy,
+template<typename Tag>
+AlphaBetaResult alphaBeta(
+    const Tag& policy,
     const GameNode& gameNode,
     std::uint8_t depth,
     std::int16_t alpha = eval_constants::MIN_SCORE,
     std::int16_t beta = eval_constants::MAX_SCORE,
     bool isMaximizingPlayer = true
+) {
+    // Verify input parameters
+    if (alpha < eval_constants::MIN_SCORE || alpha > eval_constants::MAX_SCORE) {
+        throw std::out_of_range("Alpha out of bounds.");
+    }
+    if (beta < eval_constants::MIN_SCORE || beta > eval_constants::MAX_SCORE) {
+        throw std::out_of_range("Beta out of bounds.");
+    }
+
+    // Return if the maximum depth has been explored or there are no legal moves remaining
+    if (depth == 0 || gameNode.children().empty()) {
+        auto move = gameNode.lastMove();
+        auto activePlayerScore = gameNode.evaluateBoard();
+        auto score = isMaximizingPlayer ? activePlayerScore : -activePlayerScore;
+        move.setScore(score);
+        return {move, 1};
+    }
+
+    // Recurse on children
+    return alphaBetaRecurse(policy, gameNode, depth, alpha, beta, isMaximizingPlayer);
+}
+
+// Sequential implementation
+AlphaBetaResult alphaBetaRecurse(
+    const SequentialTag& policy,
+    const GameNode& gameNode,
+    std::uint8_t depth,
+    std::int16_t alpha,
+    std::int16_t beta,
+    bool isMaximizingPlayer
 );
 
-/**
- * @brief Parallel shared-memory implementation of the minimax algorithm
- * with alpha-beta pruning using shared alpha and beta values
- */
-chess::Move alphaBeta(
-    [[maybe_unused]] const NaiveSharedMemoryTag& policy,
+// Naive shared memory parallel implementation
+AlphaBetaResult alphaBetaRecurse(
+    const NaiveSharedMemoryTag& policy,
     const GameNode& gameNode,
     std::uint8_t depth,
-    std::int16_t alpha = eval_constants::MIN_SCORE,
-    std::int16_t beta = eval_constants::MAX_SCORE,
-    bool isMaximizingPlayer = true
+    std::int16_t alpha,
+    std::int16_t beta,
+    bool isMaximizingPlayer
 );
 
-/**
- * @brief Parallel shared-memory implementation of the minimax algorithm
- * with alpha-beta pruning using local alpha and beta values
- */
-chess::Move alphaBeta(
-    [[maybe_unused]] const SharedMemoryTag& policy,
+// Shared memory parallel implementation
+AlphaBetaResult alphaBetaRecurse(
+    const SharedMemoryTag& policy,
     const GameNode& gameNode,
     std::uint8_t depth,
-    std::int16_t alpha = eval_constants::MIN_SCORE,
-    std::int16_t beta = eval_constants::MAX_SCORE,
-    bool isMaximizingPlayer = true
+    std::int16_t alpha,
+    std::int16_t beta,
+    bool isMaximizingPlayer
+);
+
+// Distributed memory parallel implementation
+AlphaBetaResult alphaBetaRecurse(
+    const DistributedMemoryTag& policy,
+    const GameNode& gameNode,
+    std::uint8_t depth,
+    std::int16_t alpha,
+    std::int16_t beta,
+    bool isMaximizingPlayer
 );
 
 #endif // ALPHA_BETA_HPP

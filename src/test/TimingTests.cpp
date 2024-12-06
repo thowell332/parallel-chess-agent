@@ -4,43 +4,82 @@
 
 #include "../AlphaBeta.hpp"
 #include <chess.hpp>
+
+#include <numeric>
 #include <chrono>
 
-template<typename T>
-std::pair<double, chess::Move> depthTimingTest(int trials, int depth)
+struct TimingTestResult
 {
-    // the actual starting position
-    constexpr auto startPos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    auto root = std::make_unique<GameNode>(startPos);
-    double totalTime = 0; // in microseconds
+    using TimeType = std::chrono::microseconds;
+    std::vector<TimeType> times;
+    std::vector<AlphaBetaResult> results;
 
-    chess::Move selectedMove;
-
-    for (int i = 0; i < trials; i++)
-    {
-        auto start = std::chrono::steady_clock::now();
-        selectedMove = alphaBeta(T{}, *root, depth);
-        auto end = std::chrono::steady_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-
-        totalTime += (double)duration;
+    void add(TimeType time, AlphaBetaResult result) {
+        times.emplace_back(time);
+        results.emplace_back(result);
     }
 
-    return std::pair<double, chess::Move>((double)totalTime/trials, selectedMove);
+    double averageTime() const {
+        std::vector<double> timeCounts(times.size());
+        std::transform(times.begin(), times.end(), timeCounts.begin(),
+            [](TimeType x){ return x.count(); });
+        return std::accumulate(timeCounts.begin(), timeCounts.end(), 0.0) / times.size();
+    }
+
+    size_t averageNodesExplored() const {
+        std::vector<size_t> nodeCounts(results.size());
+        std::transform(results.begin(), results.end(), nodeCounts.begin(),
+            [](AlphaBetaResult x){ return x.nodesExplored; });
+        return std::accumulate(nodeCounts.begin(), nodeCounts.end(), 0) / times.size();
+    }
+
+    double averageTimePerNode() const {
+        if (times.size() != results.size()) {
+            throw std::runtime_error("Inconsistent number of trials.");
+        }
+        double totalTimePerNode = 0;
+        for (int trial = 0; trial < times.size(); ++trial) {
+            totalTimePerNode += times[trial].count() / results[trial].nodesExplored;
+        }
+        return totalTimePerNode / times.size();
+    }
+};
+
+template<typename Tag>
+TimingTestResult depthTimingTest(int trials, int depth)
+{
+    constexpr auto startPos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+    auto root = std::make_unique<GameNode>(startPos);
+    TimingTestResult timingTestResult;
+    for (int i = 0; i < trials; ++i) {
+        auto start = std::chrono::steady_clock::now();
+        auto alphaBetaResult = alphaBeta(Tag{}, *root, depth);
+        auto end = std::chrono::steady_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+        timingTestResult.add(duration, alphaBetaResult);
+    }
+    return timingTestResult;
 }
 
-
-constexpr int TRIALS = 3, DEPTH = 6;
 int main(int argc, char *argv[])
 {
-    // TODO: Implement unit tests and timing tests
-    auto seqRes = depthTimingTest<SequentialTag>(TRIALS, DEPTH);
-    std::cout << "Sequential time: " << seqRes.first << '\n'
-              << "Sequential move: " << seqRes.second << std::endl;
-
-
-    auto naiveRes = depthTimingTest<NaiveSharedMemoryTag>(TRIALS, DEPTH);
-    std::cout << "Naive Shmem time: " << naiveRes.first << '\n'
-              << "Naive Shmem move: " << naiveRes.second << std::endl;
-
+    constexpr int TRIALS = 1, DEPTH = 5;
+    auto sequentialResult = depthTimingTest<SequentialTag>(TRIALS, DEPTH);
+    std::cout << "Sequential results:" << std::endl
+              << "Average time (ms):          " << sequentialResult.averageTime()/1e3      << std::endl
+              << "Average nodes explored:     " << sequentialResult.averageNodesExplored() << std::endl
+              << "Average time per node (us): " << sequentialResult.averageTimePerNode()   << std::endl
+              << std::endl;
+    auto naiveShmemResult = depthTimingTest<NaiveSharedMemoryTag>(TRIALS, DEPTH);
+    std::cout << "Naive shared memory results:" << std::endl
+              << "Average time (ms):          " << naiveShmemResult.averageTime()/1e3      << std::endl
+              << "Average nodes explored:     " << naiveShmemResult.averageNodesExplored() << std::endl
+              << "Average time per node (us): " << naiveShmemResult.averageTimePerNode()   << std::endl
+              << std::endl;
+    auto shmemResult = depthTimingTest<SharedMemoryTag>(TRIALS, DEPTH);
+    std::cout << "Shared memory results:" << std::endl
+              << "Average time (ms):          " << shmemResult.averageTime()/1e3      << std::endl
+              << "Average nodes explored:     " << shmemResult.averageNodesExplored() << std::endl
+              << "Average time per node (us): " << shmemResult.averageTimePerNode()   << std::endl
+              << std::endl;
 }
