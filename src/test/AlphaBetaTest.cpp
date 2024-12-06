@@ -13,6 +13,7 @@
  * 
  * @return Number of failures.
  */
+template<typename Tag>
 int testCorrectness()
 {
     int numTests(0), failures(0);
@@ -30,7 +31,7 @@ int testCorrectness()
         */
         constexpr auto startPos = "1k6/6R1/1K6/8/8/8/8/8 w - - 0 1";
         auto root = std::make_unique<GameNode>(startPos);
-        auto selectedMove = alphaBeta(SequentialTag{}, *root, 1);
+        auto selectedMove = alphaBeta(Tag{}, *root, 1);
         // White to move: Rook to g8
         auto bestMove = chess::Move::make(chess::Square("g7"), chess::Square("g8"));
         if (selectedMove == bestMove) {
@@ -55,7 +56,7 @@ int testCorrectness()
         */
         constexpr auto startPos = "8/8/8/8/8/1k6/6r1/1K6 b - - 0 1";
         auto root = std::make_unique<GameNode>(startPos);
-        auto selectedMove = alphaBeta(SequentialTag{}, *root, 1);
+        auto selectedMove = alphaBeta(Tag{}, *root, 1);
         // Black to move: Rook to g1
         auto bestMove = chess::Move::make(chess::Square("g2"), chess::Square("g1"));
         if (selectedMove == bestMove) {
@@ -80,7 +81,7 @@ int testCorrectness()
         */
         constexpr auto startPos = "1Bb3BN/R2Pk2r/1Q5B/4q2R/2bN4/4Q1BK/1p6/1bq1R1rb w - - 0 1";
         auto root = std::make_unique<GameNode>(startPos);
-        auto selectedMove = alphaBeta(SequentialTag{}, *root, 1);
+        auto selectedMove = alphaBeta(Tag{}, *root, 1);
         // White to move: Queen to a3
         auto bestMove = chess::Move::make(chess::Square("e3"), chess::Square("a3"));
         if (selectedMove == bestMove) {
@@ -107,7 +108,7 @@ int testCorrectness()
         */
         constexpr auto startPos = "5Q2/p1r5/6K1/R7/6k1/P7/8/8 w - - 0 1";
         auto root = std::make_unique<GameNode>(startPos);
-        auto selectedMove = alphaBeta(SequentialTag{}, *root, 3);
+        auto selectedMove = alphaBeta(Tag{}, *root, 3);
         // White to move: Rook to g5
         auto bestMove = chess::Move::make(chess::Square("a5"), chess::Square("g5"));
         if (selectedMove == bestMove) {
@@ -120,10 +121,10 @@ int testCorrectness()
         }
         ++numTests;
         root->makeMove(selectedMove);
-        selectedMove = alphaBeta(SequentialTag{}, *root, 2);
+        selectedMove = alphaBeta(Tag{}, *root, 2);
         // Black to move: Anywhere
         root->makeMove(selectedMove);
-        selectedMove = alphaBeta(SequentialTag{}, *root, 1);
+        selectedMove = alphaBeta(Tag{}, *root, 1);
         // White to move: Queen to h6
         bestMove = chess::Move::make(chess::Square("f8"), chess::Square("h6"));
         if (selectedMove == bestMove) {
@@ -146,7 +147,14 @@ int testCorrectness()
 
 int main(int argc, char* argv[])
 {
-    // TODO: Implement unit tests and timing tests
-    auto failures = testCorrectness();
+    std::cout << std::endl << "<----- SEQUENTIAL ----->" << std::endl << std::endl;
+    auto failures = testCorrectness<SequentialTag>();
+    std::cout << std::endl << "<----- NAIVE SHARED MEMORY ----->" << std::endl << std::endl;
+    failures += testCorrectness<NaiveSharedMemoryTag>();
+    std::cout << std::endl << "<----- SHARED MEMORY ----->" << std::endl << std::endl;
+    failures += testCorrectness<SharedMemoryTag>();
+    if (failures) {
+        std::cout << std::endl << ">>> " << failures << " failures detected." << std::endl;
+    }
     return 0;
 }
