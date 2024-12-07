@@ -63,7 +63,18 @@ TimingTestResult depthTimingTest(int trials, int depth)
 
 int main(int argc, char *argv[])
 {
-    constexpr int TRIALS = 1, DEPTH = 5;
+    int DEPTH, TRIALS;
+    if (argc != 3){
+        fprintf(stderr, "Usage: %s DEPTH TRIALS\n", argv[0]);
+        exit(EXIT_SUCCESS);
+    }
+    if (argc >= 2) {
+        DEPTH = strtol(argv[1], NULL, 10);
+    }
+    if (argc >= 3) {
+        TRIALS = strtol(argv[1], NULL, 10);
+    }
+
     auto sequentialResult = depthTimingTest<SequentialTag>(TRIALS, DEPTH);
     std::cout << "Sequential results:" << std::endl
               << "Average time (ms):          " << sequentialResult.averageTime()/1e3      << std::endl
