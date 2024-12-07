@@ -96,16 +96,16 @@ alphaBeta(
     size_t nodesExplored = 0;
     if (isMaximizingPlayer) {
         bestMove.setScore(eval_constants::MIN_SCORE - 1);
-        #pragma omp parallel for shared(bestMove, nodesExplored, alpha, beta)
+        #pragma omp parallel for shared(bestMove, alpha, beta) reduction(+:nodesExplored)
         for (const auto& child : gameNode.children()) {
             if (beta <= alpha) {
                 continue;
             }
             auto result = alphaBeta(policy, *child, depth - 1, alpha, beta, false);
             auto score = result.bestMove.score();
+            nodesExplored += result.nodesExplored;
             #pragma omp critical
             {
-                nodesExplored += result.nodesExplored;
                 if (score > bestMove.score()) {
                     bestMove = child->lastMove();
                     bestMove.setScore(score);
@@ -115,16 +115,16 @@ alphaBeta(
         }
     } else {
         bestMove.setScore(eval_constants::MAX_SCORE + 1);
-        #pragma omp parallel for shared(bestMove, nodesExplored, alpha, beta)
+        #pragma omp parallel for shared(bestMove, alpha, beta) 
         for (const auto& child : gameNode.children()) {
             if (beta <= alpha) {
                 continue;
             }
             auto result = alphaBeta(policy, *child, depth - 1, alpha, beta, true);
             auto score = result.bestMove.score();
+            nodesExplored += result.nodesExplored;
             #pragma omp critical
             {
-                nodesExplored += result.nodesExplored;
                 if (score < bestMove.score()) {
                     bestMove = child->lastMove();
                     bestMove.setScore(score);
@@ -155,14 +155,14 @@ AlphaBetaResult alphaBeta(
 
     chess::Move bestMove;
     size_t nodesExplored = 0;
-    #pragma omp firstprivate(alpha, beta, bestMove)
+    #pragma omp firstprivate(alpha, beta, bestMove) reduction(+:nodesExplored)
     {
         if (isMaximizingPlayer) {
             #pragma omp reduction(moveMax : bestMove)
             {
                 bestMove.setScore(eval_constants::MIN_SCORE - 1);
-        
-                #pragma omp parallel for shared(nodesExplored)
+
+                #pragma omp parallel for
                 for (const auto& child : gameNode.children()) {
                     if (beta <= alpha) {
                         continue;
@@ -174,17 +174,14 @@ AlphaBetaResult alphaBeta(
                         bestMove = child->lastMove();
                         bestMove.setScore(score);
                     }
-                    #pragma omp critical
-                    {
-                        nodesExplored += result.nodesExplored;
-                    } // omp critical
+                    nodesExplored += result.nodesExplored;
                 } // omp parallel for
             } // omp reduction max:bestMove
         } else {
             #pragma omp reduction(moveMin : bestMove)
             {
                 bestMove.setScore(eval_constants::MAX_SCORE + 1);
-                #pragma omp parallel for shared(nodesExplored)
+                #pragma omp parallel for
                 for (const auto& child : gameNode.children()) {
                     if (beta <= alpha) {
                         continue;
@@ -196,10 +193,7 @@ AlphaBetaResult alphaBeta(
                         bestMove = child->lastMove();
                         bestMove.setScore(score);
                     }
-                    #pragma omp critical
-                    {
-                        nodesExplored += result.nodesExplored;
-                    } // omp critical
+                    nodesExplored += result.nodesExplored;
                 } // omp parallel for
             } // omp reduction min:bestMove
         } // if (maximizingPlayer)

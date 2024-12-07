@@ -8,9 +8,10 @@
 #include <numeric>
 #include <chrono>
 
+using TimeType = std::chrono::microseconds;
+
 struct TimingTestResult
 {
-    using TimeType = std::chrono::microseconds;
     std::vector<TimeType> times;
     std::vector<AlphaBetaResult> results;
 
@@ -55,7 +56,7 @@ TimingTestResult depthTimingTest(int trials, int depth)
         auto start = std::chrono::steady_clock::now();
         auto alphaBetaResult = alphaBeta(Tag{}, *root, depth);
         auto end = std::chrono::steady_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+        auto duration = std::chrono::duration_cast<TimeType>(end - start);
         timingTestResult.add(duration, alphaBetaResult);
     }
     return timingTestResult;
