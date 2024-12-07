@@ -64,7 +64,7 @@ class GameNode
         const chess::Move& lastMove() const { return lastMove_; }
 
         /**
-         * @brief Accessor for number of child nodes with lazy initialization. Child nodes are only
+         * @brief Accessor for vector of child nodes with lazy initialization. Child nodes are only
          * initialized the first time that this accessor is called.
          */
         const std::vector<std::unique_ptr<GameNode>>& children() const;

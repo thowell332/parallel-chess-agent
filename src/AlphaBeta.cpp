@@ -5,8 +5,10 @@
 #include "AlphaBeta.hpp"
 #include <omp.h>
 
+#include <numeric>
+
 AlphaBetaResult
-alphaBetaRecurse(
+alphaBeta(
     const SequentialTag& policy,
     const GameNode& gameNode,
     std::uint8_t depth,
@@ -14,6 +16,15 @@ alphaBetaRecurse(
     std::int16_t beta,
     bool isMaximizingPlayer
 ) {
+    // Return if the maximum depth has been explored or there are no legal moves remaining
+    if (depth == 0 || gameNode.children().empty()) {
+        auto move = gameNode.lastMove();
+        auto activePlayerScore = gameNode.evaluateBoard();
+        auto score = isMaximizingPlayer ? activePlayerScore : -activePlayerScore;
+        move.setScore(score);
+        return {move, 1};
+    }
+
     chess::Move bestMove;
     size_t nodesExplored = 0;
     if (isMaximizingPlayer) {
@@ -51,7 +62,7 @@ alphaBetaRecurse(
 }
 
 AlphaBetaResult
-alphaBetaRecurse(
+alphaBeta(
     const NaiveSharedMemoryTag& policy,
     const GameNode& gameNode,
     std::uint8_t depth,
@@ -59,48 +70,60 @@ alphaBetaRecurse(
     std::int16_t beta,
     bool isMaximizingPlayer
 ) {
+    // Return if the maximum depth has been explored or there are no legal moves remaining
+    if (depth == 0 || gameNode.children().empty()) {
+        auto move = gameNode.lastMove();
+        auto activePlayerScore = gameNode.evaluateBoard();
+        auto score = isMaximizingPlayer ? activePlayerScore : -activePlayerScore;
+        move.setScore(score);
+        return {move, 1};
+    }
+
     chess::Move bestMove;
     size_t nodesExplored = 0;
     if (isMaximizingPlayer) {
         bestMove.setScore(eval_constants::MIN_SCORE - 1);
-        #pragma omp parallel for
+        #pragma omp parallel for shared(bestMove, nodesExplored, alpha, beta)
         for (const auto& child : gameNode.children()) {
             if (beta <= alpha) {
                 continue;
             }
             auto result = alphaBeta(policy, *child, depth - 1, alpha, beta, false);
-            nodesExplored += result.nodesExplored;
             auto score = result.bestMove.score();
-            if (score > bestMove.score()) {
-                bestMove = child->lastMove();
-                bestMove.setScore(score);
-            }
             #pragma omp critical
-            alpha = std::max(alpha, bestMove.score());
+            {
+                nodesExplored += result.nodesExplored;
+                if (score > bestMove.score()) {
+                    bestMove = child->lastMove();
+                    bestMove.setScore(score);
+                }
+                alpha = std::max(alpha, bestMove.score());
+            } // omp critical
         }
     } else {
         bestMove.setScore(eval_constants::MAX_SCORE + 1);
-        #pragma omp parallel for
+        #pragma omp parallel for shared(bestMove, nodesExplored, alpha, beta)
         for (const auto& child : gameNode.children()) {
             if (beta <= alpha) {
                 continue;
             }
             auto result = alphaBeta(policy, *child, depth - 1, alpha, beta, true);
-            nodesExplored += result.nodesExplored;
             auto score = result.bestMove.score();
-            if (score < bestMove.score()) {
-                bestMove = child->lastMove();
-                bestMove.setScore(score);
-            }
             #pragma omp critical
-            beta = std::min(beta, bestMove.score());
+            {
+                nodesExplored += result.nodesExplored;
+                if (score < bestMove.score()) {
+                    bestMove = child->lastMove();
+                    bestMove.setScore(score);
+                }
+                beta = std::min(beta, bestMove.score());
+            } // omp critical
         }
     }
     return {bestMove, nodesExplored};
 }
 
-AlphaBetaResult
-alphaBetaRecurse(
+AlphaBetaResult alphaBeta(
     const SharedMemoryTag& policy,
     const GameNode& gameNode,
     std::uint8_t depth,
@@ -108,41 +131,56 @@ alphaBetaRecurse(
     std::int16_t beta,
     bool isMaximizingPlayer
 ) {
+    // Return if the maximum depth has been explored or there are no legal moves remaining
+    if (depth == 0 || gameNode.children().empty()) {
+        auto move = gameNode.lastMove();
+        auto activePlayerScore = gameNode.evaluateBoard();
+        auto score = isMaximizingPlayer ? activePlayerScore : -activePlayerScore;
+        move.setScore(score);
+        return {move, 1};
+    }
+
     chess::Move bestMove;
     size_t nodesExplored = 0;
     #pragma omp firstprivate(alpha, beta)
     {
         if (isMaximizingPlayer) {
             bestMove.setScore(eval_constants::MIN_SCORE - 1);
-            #pragma omp parallel for
+            #pragma omp parallel for shared(bestMove, nodesExplored)
             for (const auto& child : gameNode.children()) {
                 if (beta <= alpha) {
                     continue;
                 }
                 auto result = alphaBeta(policy, *child, depth - 1, alpha, beta, false);
-                nodesExplored += result.nodesExplored;
                 auto score = result.bestMove.score();
-                if (score > bestMove.score()) {
-                    bestMove = child->lastMove();
-                    bestMove.setScore(score);
-                }
                 alpha = std::max(alpha, bestMove.score());
+                #pragma omp critical
+                {
+                    nodesExplored += result.nodesExplored;
+                    if (score > bestMove.score()) {
+                        bestMove = child->lastMove();
+                        bestMove.setScore(score);
+                    }
+                } // omp critical
             }
         } else {
             bestMove.setScore(eval_constants::MAX_SCORE + 1);
-            #pragma omp parallel for
+            #pragma omp parallel for shared(bestMove, nodesExplored)
             for (const auto& child : gameNode.children()) {
                 if (beta <= alpha) {
                     continue;
                 }
                 auto result = alphaBeta(policy, *child, depth - 1, alpha, beta, true);
-                nodesExplored += result.nodesExplored;
                 auto score = result.bestMove.score();
-                if (score < bestMove.score()) {
-                    bestMove = child->lastMove();
-                    bestMove.setScore(score);
-                }
                 beta = std::min(beta, bestMove.score());
+                #pragma omp critical
+                {
+                    nodesExplored += result.nodesExplored;
+                    if (score < bestMove.score()) {
+                        bestMove = child->lastMove();
+                        bestMove.setScore(score);
+                    }
+                } // omp critical
             }
         }
     }
@@ -150,7 +188,7 @@ alphaBetaRecurse(
 }
 
 AlphaBetaResult
-alphaBetaRecurse(
+alphaBeta(
     const DistributedMemoryTag& policy,
     const GameNode& gameNode,
     std::uint8_t depth,
@@ -159,6 +197,7 @@ alphaBetaRecurse(
     bool isMaximizingPlayer
 ) {
     chess::Move bestMove;
+    bestMove.setScore(0);
     size_t nodesExplored = 0;
     //TODO: Implement distributed memory algorithm
     return {bestMove, nodesExplored};
