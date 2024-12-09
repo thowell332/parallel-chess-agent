@@ -3,8 +3,8 @@
 cd "$(dirname "$0")"
 BIN=../../bin
 SRC=../../src
-FILE="${SRC}/data/timing_results_pos_2.csv"
-CMD="${BIN}/TimingTests 5 2"
+FILE="${SRC}/data/timing_results_cluster_pos_1.csv"
+CMD="${BIN}/TimingTests 5 1"
 
 > $FILE
 echo "num_threads,trial,time,num_nodes" | tee $FILE

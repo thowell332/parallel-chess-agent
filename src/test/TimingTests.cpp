@@ -61,8 +61,8 @@ int main(int argc, char *argv[])
             std::cerr << "std::out_of_range::what() " << e.what() << std::endl;
         }
     }
-    auto naiveShmemResult = depthTimingTest<NaiveSharedMemoryTag>(depth, startPos[posIdx]);
-    std::cout << naiveShmemResult.timeAsDouble()
-              << "," << naiveShmemResult.nodesExplored()
+    auto shemeResult = depthTimingTest<SharedMemoryTag>(depth, startPos[posIdx]);
+    std::cout << shemeResult.timeAsDouble()
+              << "," << shemeResult.nodesExplored()
               << std::endl;
 }
