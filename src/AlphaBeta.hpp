@@ -67,12 +67,13 @@ AlphaBetaResult alphaBeta(
 );
 
 // Shared memory with occasional sync'ing implementation
+// if numSyncIterations is 0 is near-identical to naive implementation
 AlphaBetaResult alphaBeta(
     const GameNode& gameNode,
     std::uint8_t depth,
-    const std::uint8_t numSyncInterations, // number of iterations before sync'ing
+    const std::uint8_t numSyncInterations,
     std::uint8_t curSyncIteration = 0,
-    std::int16_t *globalAlpha = new std::int16_t, // globals must be instantiated outside of function call
+    std::int16_t *globalAlpha = new std::int16_t,
     std::int16_t *globalBeta = new std::int16_t,
     std::int16_t alpha = eval_constants::MIN_SCORE,
     std::int16_t beta = eval_constants::MAX_SCORE,
