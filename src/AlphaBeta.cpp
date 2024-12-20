@@ -104,14 +104,22 @@ alphaBeta(
             auto result = alphaBeta(policy, *child, depth - 1, alpha, beta, false);
             auto score = result.bestMove.score();
             nodesExplored += result.nodesExplored;
-            #pragma omp critical
-            {
-                if (score > bestMove.score()) {
-                    bestMove = child->lastMove();
-                    bestMove.setScore(score);
-                }
-                alpha = std::max(alpha, bestMove.score());
-            } // omp critical
+            // Only enter critical sections if there is work to do
+            if (score > bestMove.score()) {
+                #pragma omp critical
+                {
+                    if (score > bestMove.score()) {
+                        bestMove = child->lastMove();
+                        bestMove.setScore(score);
+                    }
+                } // omp critical
+            }
+            if (bestMove.score() > alpha) {
+                #pragma omp critical
+                {
+                    alpha = std::max(alpha, bestMove.score());
+                } // omp critical
+            }
         }
     } else {
         bestMove.setScore(eval_constants::MAX_SCORE + 1);
@@ -123,16 +131,24 @@ alphaBeta(
             auto result = alphaBeta(policy, *child, depth - 1, alpha, beta, true);
             auto score = result.bestMove.score();
             nodesExplored += result.nodesExplored;
-            #pragma omp critical
-            {
-                if (score < bestMove.score()) {
-                    bestMove = child->lastMove();
-                    bestMove.setScore(score);
-                }
-                beta = std::min(beta, bestMove.score());
-            } // omp critical
-        }// omp parallel for
-    }// if (maximizingPlayer)
+            // Only enter critical sections if there is work to do
+            if (score < bestMove.score()) {
+                #pragma omp critical
+                {
+                    if (score < bestMove.score()) {
+                        bestMove = child->lastMove();
+                        bestMove.setScore(score);
+                    }
+                } // omp critical
+            }
+            if (bestMove.score() < beta) {
+                #pragma omp critical
+                {
+                    beta = std::min(beta, bestMove.score());
+                } // omp critical
+            }
+        } // omp parallel for
+    }
     return {bestMove, nodesExplored};
 }
 
