@@ -76,7 +76,7 @@ alphaBeta(
 
 AlphaBetaResult
 alphaBeta(
-    const NaiveSharedMemoryTag& policy,
+    const SharedCutoffsTag& policy,
     const GameNode& gameNode,
     std::uint8_t depth,
     std::int16_t alpha,
@@ -153,7 +153,7 @@ alphaBeta(
 }
 
 AlphaBetaResult alphaBeta(
-    const SharedMemoryTag& policy,
+    const LocalCutoffsTag& policy,
     const GameNode& gameNode,
     std::uint8_t depth,
     std::int16_t alpha,

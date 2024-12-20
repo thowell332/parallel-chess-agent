@@ -292,11 +292,11 @@ int main(int argc, char* argv[])
 {
     std::cout << std::endl << "<----- SEQUENTIAL ----->" << std::endl << std::endl;
     auto failures = testCorrectness<SequentialTag>();
-    std::cout << std::endl << "<----- NAIVE SHARED MEMORY ----->" << std::endl << std::endl;
-    failures += testCorrectness<NaiveSharedMemoryTag>();
-    std::cout << std::endl << "<----- SHARED MEMORY ----->" << std::endl << std::endl;
-    failures += testCorrectness<SharedMemoryTag>();
-    std::cout << std::endl << "<----- OCCASIONAL SYNC'D MEMORY ----->" << std::endl << std::endl;
+    std::cout << std::endl << "<----- SHARED MEMORY SHARED CUTOFFS ----->" << std::endl << std::endl;
+    failures += testCorrectness<SharedCutoffsTag>();
+    std::cout << std::endl << "<----- SHARED MEMORY LOCAL CUTOFFS ----->" << std::endl << std::endl;
+    failures += testCorrectness<LocalCutoffsTag>();
+    std::cout << std::endl << "<----- SHARED MEMORY BLENDED APPROACH ----->" << std::endl << std::endl;
     failures += testCorrectnessOccasionalSync(0);
     if (failures) {
         std::cout << std::endl << ">>> " << failures << " failures detected." << std::endl;

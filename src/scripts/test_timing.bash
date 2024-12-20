@@ -1,13 +1,19 @@
 #!/bin/bash
 
+# Define test parameters
+BOARD_POS=${1:-0} # 0: early game, 1: end game
+DEPTH=${2:-5}
+echo "Using board position ${BOARD_POS} and depth ${DEPTH}..."
+
+# Execute test
 cd "$(dirname "$0")"
 BIN=../../bin
 SRC=../../src
-FILE="${SRC}/data/timing_results_cluster_pos_1.csv"
-CMD="${BIN}/TimingTests 5 1"
+FILE="${SRC}/data/timing_results_${BOARD_POS}_${DEPTH}_blended.csv"
+CMD="${BIN}/TimingTests ${BOARD_POS} ${DEPTH}"
 
 > $FILE
-echo "num_threads,trial,time,num_nodes" | tee $FILE
+echo "num_threads,trial,time_shared,num_nodes_shared,time_local,num_nodes_local,time_blended,num_nodes_blended,pos_idx" | tee $FILE
 for num_threads in $(seq 1 32);
 do
     export OMP_NUM_THREADS=$num_threads

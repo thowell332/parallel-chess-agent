@@ -21,9 +21,9 @@ struct AlphaBetaResult
 
 // Tag dispatching for algorithm execution policy
 struct SequentialTag {};
-struct NaiveSharedMemoryTag {};
-struct SharedMemoryTag {};
-struct DistributedMemoryTag {};
+struct SharedCutoffsTag {};
+struct LocalCutoffsTag {};
+struct BlendedCutoffsTag {};
 
 /**
  * @brief Sequential minimax algorithm with alpha-beta pruning.
@@ -46,9 +46,9 @@ AlphaBetaResult alphaBeta(
     bool isMaximizingPlayer = true
 );
 
-// Naive shared memory parallel implementation
+// Shared memory parallel implementation with shared cutoff values
 AlphaBetaResult alphaBeta(
-    const NaiveSharedMemoryTag& policy,
+    const SharedCutoffsTag& policy,
     const GameNode& gameNode,
     std::uint8_t depth,
     std::int16_t alpha = eval_constants::MIN_SCORE,
@@ -56,9 +56,9 @@ AlphaBetaResult alphaBeta(
     bool isMaximizingPlayer = true
 );
 
-// Shared memory parallel implementation
+// Shared memory parallel implementation with local cutoff values
 AlphaBetaResult alphaBeta(
-    const SharedMemoryTag& policy,
+    const LocalCutoffsTag& policy,
     const GameNode& gameNode,
     std::uint8_t depth,
     std::int16_t alpha = eval_constants::MIN_SCORE,
