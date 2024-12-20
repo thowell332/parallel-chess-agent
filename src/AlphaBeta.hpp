@@ -80,14 +80,4 @@ AlphaBetaResult alphaBeta(
     bool isMaximizingPlayer = true
 );
 
-// Distributed memory parallel implementation
-AlphaBetaResult alphaBeta(
-    const DistributedMemoryTag& policy,
-    const GameNode& gameNode,
-    std::uint8_t depth,
-    std::int16_t alpha,
-    std::int16_t beta,
-    bool isMaximizingPlayer
-);
-
 #endif // ALPHA_BETA_HPP

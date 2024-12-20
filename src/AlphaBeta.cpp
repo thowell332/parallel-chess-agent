@@ -7,18 +7,18 @@
 
 #include <numeric>
 
-
-
-void combinerMin(chess::Move *in, chess::Move *out) {
-    *out =  out->score() < in->score() ? *out : *in;
+// Combiner expressions for the custom reductions
+void combinerMin(const chess::Move& in, chess::Move& out) {
+    out = out.score() < in.score() ? out : in;
 }
 
-void combinerMax(chess::Move* in, chess::Move* out) {
-    *out =  out->score() > in->score() ? *out : *in;
+void combinerMax(const chess::Move& in, chess::Move& out) {
+    out = out.score() > in.score() ? out : in;
 }
 
-#pragma omp declare reduction(moveMin : chess::Move : combinerMin(&omp_out, &omp_in)) initializer(omp_priv = omp_orig)
-#pragma omp declare reduction(moveMax : chess::Move : combinerMax(&omp_out, &omp_in)) initializer(omp_priv = omp_orig)
+// Custom reductions for chess::Move
+#pragma omp declare reduction(moveMin : chess::Move : combinerMin(omp_out, omp_in)) initializer(omp_priv = omp_orig)
+#pragma omp declare reduction(moveMax : chess::Move : combinerMax(omp_out, omp_in)) initializer(omp_priv = omp_orig)
 
 AlphaBetaResult
 alphaBeta(
@@ -123,7 +123,7 @@ alphaBeta(
         }
     } else {
         bestMove.setScore(eval_constants::MAX_SCORE + 1);
-        #pragma omp parallel for shared(bestMove, alpha, beta) 
+        #pragma omp parallel for shared(bestMove, alpha, beta) reduction(+:nodesExplored)
         for (const auto& child : gameNode.children()) {
             if (beta <= alpha) {
                 continue;
@@ -184,13 +184,13 @@ AlphaBetaResult alphaBeta(
                         continue;
                     }
                     auto result = alphaBeta(policy, *child, depth - 1, alpha, beta, false);
+                    nodesExplored += result.nodesExplored;
                     auto score = result.bestMove.score();
-                    alpha = std::max(alpha, bestMove.score());
                     if (score > bestMove.score()) {
                         bestMove = child->lastMove();
                         bestMove.setScore(score);
                     }
-                    nodesExplored += result.nodesExplored;
+                    alpha = std::max(alpha, bestMove.score());
                 } // omp parallel for
             } // omp reduction max:bestMove
         } else {
@@ -203,16 +203,16 @@ AlphaBetaResult alphaBeta(
                         continue;
                     }
                     auto result = alphaBeta(policy, *child, depth - 1, alpha, beta, true);
+                    nodesExplored += result.nodesExplored;
                     auto score = result.bestMove.score();
-                    beta = std::min(beta, bestMove.score());
                     if (score < bestMove.score()) {
                         bestMove = child->lastMove();
                         bestMove.setScore(score);
                     }
-                    nodesExplored += result.nodesExplored;
+                    beta = std::min(beta, bestMove.score());
                 } // omp parallel for
             } // omp reduction min:bestMove
-        } // if (maximizingPlayer)
+        }
     } // omp firstprivate
     return {bestMove, nodesExplored};
 }
@@ -273,13 +273,13 @@ AlphaBetaResult alphaBeta(
                     }
 
                     auto result = alphaBeta(*child, depth - 1, numSyncInterations, curSyncIteration, globalAlpha, globalBeta, alpha, beta,  false);
+                    nodesExplored += result.nodesExplored;
                     auto score = result.bestMove.score();
-                    alpha = std::max(alpha, bestMove.score());
                     if (score > bestMove.score()) {
                         bestMove = child->lastMove();
                         bestMove.setScore(score);
                     }
-                    nodesExplored += result.nodesExplored;
+                    alpha = std::max(alpha, bestMove.score());
                 } // omp parallel for
             } // omp reduction max:bestMove
         } else {
@@ -292,32 +292,16 @@ AlphaBetaResult alphaBeta(
                         continue;
                     }
                     auto result = alphaBeta(*child, depth - 1, numSyncInterations, curSyncIteration - 1, globalAlpha, globalBeta, alpha, beta,  true);
+                    nodesExplored += result.nodesExplored;
                     auto score = result.bestMove.score();
-                    beta = std::min(beta, bestMove.score());
                     if (score < bestMove.score()) {
                         bestMove = child->lastMove();
                         bestMove.setScore(score);
                     }
-                    nodesExplored += result.nodesExplored;
+                    beta = std::min(beta, bestMove.score());
                 } // omp parallel for
             } // omp reduction min:bestMove
         } // if (maximizingPlayer)
     } // omp firstprivate
-    return {bestMove, nodesExplored};
-}
-
-AlphaBetaResult
-alphaBeta(
-    const DistributedMemoryTag& policy,
-    const GameNode& gameNode,
-    std::uint8_t depth,
-    std::int16_t alpha,
-    std::int16_t beta,
-    bool isMaximizingPlayer
-) {
-    chess::Move bestMove;
-    bestMove.setScore(0);
-    size_t nodesExplored = 0;
-    //TODO: Implement distributed memory algorithm
     return {bestMove, nodesExplored};
 }
