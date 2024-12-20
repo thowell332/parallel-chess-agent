@@ -66,6 +66,19 @@ AlphaBetaResult alphaBeta(
     bool isMaximizingPlayer = true
 );
 
+// Shared memory with occasional sync'ing implementation
+AlphaBetaResult alphaBeta(
+    const GameNode& gameNode,
+    std::uint8_t depth,
+    const std::uint8_t numSyncInterations, // number of iterations before sync'ing
+    std::uint8_t curSyncIteration = 0,
+    std::int16_t *globalAlpha = new std::int16_t, // globals must be instantiated outside of function call
+    std::int16_t *globalBeta = new std::int16_t,
+    std::int16_t alpha = eval_constants::MIN_SCORE,
+    std::int16_t beta = eval_constants::MAX_SCORE,
+    bool isMaximizingPlayer = true
+);
+
 // Distributed memory parallel implementation
 AlphaBetaResult alphaBeta(
     const DistributedMemoryTag& policy,
