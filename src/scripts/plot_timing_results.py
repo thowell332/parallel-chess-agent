@@ -9,12 +9,12 @@ from matplotlib import pyplot as plt
 from matplotlib.ticker import ScalarFormatter
 
 # Set the depth to select files
-depth = 5
+depth = 3
 
 # Set file paths and read data
 base_dir = os.path.dirname(os.path.abspath(sys.argv[0])) # Directory of this script (src/scripts/)
-csv_filename_0 = os.path.join(base_dir, f"../data/timing_results_0_{depth}_blended.csv")
-csv_filename_1 = os.path.join(base_dir, f"../data/timing_results_1_{depth}_blended.csv")
+csv_filename_0 = os.path.join(base_dir, f"../data/timing_results_0_{depth}.csv")
+csv_filename_1 = os.path.join(base_dir, f"../data/timing_results_1_{depth}.csv")
 
 def read_timing_results(filename):
     df = pd.read_csv(filename, sep=",")
@@ -98,10 +98,10 @@ plot_std_shaded(ax2, df_1.index, [
     df_1.speedup_per_node_blended
 ])
 fig.legend(lines, labels, loc="outside lower center", ncols=2, fontsize=labelSize)
-plt.suptitle("Speedup Factor Per Node vs. Number of Threads", fontsize=titleSize)
+plt.suptitle(f"Speedup Factor Per Node vs. Number of Threads\n(Move Depth = {depth})", fontsize=titleSize)
 fig.text(0.5, 0.175, "Number of Threads", fontsize=labelSize, ha='center')
 plt.tight_layout(rect=[0, 0.2, 1, 1])
-plt.savefig(os.path.join(base_dir, "../data/speedup_per_node.png"))
+plt.savefig(os.path.join(base_dir, f"../data/speedup_per_node_{depth}.png"))
 
 # Plot factor of additional nodes
 fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 6), sharey=True)
@@ -124,10 +124,10 @@ plot_std_shaded(ax2, df_1.index, [
     df_1.node_factor_blended
 ])
 fig.legend(lines, labels, loc="outside lower center", ncols=2, fontsize=labelSize)
-plt.suptitle("Factor of Additional Nodes Explored vs. Number of Threads", fontsize=titleSize)
+plt.suptitle(f"Factor of Additional Nodes Explored vs. Number of Threads\n(Move Depth = {depth})", fontsize=titleSize)
 fig.text(0.5, 0.175, "Number of Threads", fontsize=labelSize, ha='center')
 plt.tight_layout(rect=[0, 0.2, 1, 1])
-plt.savefig(os.path.join(base_dir, f"../data/node_factor.png"))
+plt.savefig(os.path.join(base_dir, f"../data/node_factor_{depth}.png"))
 
 # Plot total speedup factor
 fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 6), sharey=True)
@@ -150,7 +150,7 @@ plot_std_shaded(ax2, df_1.index, [
     df_1.total_speedup_blended
 ])
 fig.legend(lines, labels, loc="outside lower center", ncols=2, fontsize=labelSize)
-plt.suptitle("Total Speedup Factor vs. Number of Threads", fontsize=titleSize)
+plt.suptitle(f"Total Speedup Factor vs. Number of Threads\n(Move Depth = {depth})", fontsize=titleSize)
 fig.text(0.5, 0.175, "Number of Threads", fontsize=labelSize, ha='center')
 plt.tight_layout(rect=[0, 0.2, 1, 1])
-plt.savefig(os.path.join(base_dir, f"../data/total_speedup.png"))
+plt.savefig(os.path.join(base_dir, f"../data/total_speedup_{depth}.png"))

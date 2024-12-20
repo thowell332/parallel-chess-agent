@@ -9,7 +9,7 @@ echo "Using board position ${BOARD_POS} and depth ${DEPTH}..."
 cd "$(dirname "$0")"
 BIN=../../bin
 SRC=../../src
-FILE="${SRC}/data/timing_results_${BOARD_POS}_${DEPTH}_blended.csv"
+FILE="${SRC}/data/timing_results_${BOARD_POS}_${DEPTH}.csv"
 CMD="${BIN}/TimingTests ${BOARD_POS} ${DEPTH}"
 
 > $FILE
