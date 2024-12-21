@@ -13,7 +13,7 @@ FILE="${SRC}/data/timing_results_${BOARD_POS}_${DEPTH}.csv"
 CMD="${BIN}/TimingTests ${BOARD_POS} ${DEPTH}"
 
 > $FILE
-echo "num_threads,trial,time_shared,num_nodes_shared,time_local,num_nodes_local,time_blended,num_nodes_blended,pos_idx" | tee $FILE
+echo "num_threads,trial,time_shared,num_nodes_shared,correct_shared,time_local,num_nodes_local,correct_local,time_blended,num_nodes_blended,correct_local,pos_idx" | tee $FILE
 for num_threads in $(seq 1 32);
 do
     export OMP_NUM_THREADS=$num_threads
