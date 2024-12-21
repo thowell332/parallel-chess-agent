@@ -38,7 +38,7 @@ TimingTestResult depthTimingTestBlended(int depth, const std::string& startPos, 
     auto root = std::make_unique<GameNode>(startPos);
 
     auto start = std::chrono::steady_clock::now();
-    auto result = alphaBeta(*root, depth, syncIter);
+    auto result = alphaBeta(BlendedCutoffsTag{}, *root, depth, syncIter);
     auto end = std::chrono::steady_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
 
@@ -74,16 +74,12 @@ int main(int argc, char *argv[])
             std::cerr << "std::out_of_range::what() " << e.what() << std::endl;
         }
     }
-    auto resultSeq = depthTimingTest<SequentialTag>(depth, startPos[posIdx]);
     auto resultShared = depthTimingTest<SharedCutoffsTag>(depth, startPos[posIdx]);
     auto resultLocal = depthTimingTest<LocalCutoffsTag>(depth, startPos[posIdx]);
-    auto resultBlended = depthTimingTestBlended(depth, startPos[posIdx], 2);
     std::cout << resultShared.timeAsDouble()
               << "," << resultShared.nodesExplored()
               << "," << resultLocal.timeAsDouble()
               << "," << resultLocal.nodesExplored()
-              << "," << resultBlended.timeAsDouble()
-              << "," << resultBlended.nodesExplored()
               << "," << posIdx
               << std::endl;
 }

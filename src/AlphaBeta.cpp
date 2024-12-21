@@ -5,6 +5,7 @@
 #include "AlphaBeta.hpp"
 #include <omp.h>
 
+#include <memory>
 #include <numeric>
 
 // Combiner expressions for the custom reductions
@@ -116,9 +117,7 @@ alphaBeta(
             }
             if (bestMove.score() > alpha) {
                 #pragma omp critical
-                {
-                    alpha = std::max(alpha, bestMove.score());
-                } // omp critical
+                alpha = std::max(alpha, bestMove.score());
             }
         }
     } else {
@@ -143,16 +142,15 @@ alphaBeta(
             }
             if (bestMove.score() < beta) {
                 #pragma omp critical
-                {
-                    beta = std::min(beta, bestMove.score());
-                } // omp critical
+                beta = std::min(beta, bestMove.score());
             }
         } // omp parallel for
     }
     return {bestMove, nodesExplored};
 }
 
-AlphaBetaResult alphaBeta(
+AlphaBetaResult
+alphaBeta(
     const LocalCutoffsTag& policy,
     const GameNode& gameNode,
     std::uint8_t depth,
@@ -177,7 +175,6 @@ AlphaBetaResult alphaBeta(
             #pragma omp reduction(moveMax : bestMove)
             {
                 bestMove.setScore(eval_constants::MIN_SCORE - 1);
-
                 #pragma omp parallel for
                 for (const auto& child : gameNode.children()) {
                     if (beta <= alpha) {
@@ -217,91 +214,101 @@ AlphaBetaResult alphaBeta(
     return {bestMove, nodesExplored};
 }
 
+namespace { // anonymous namespace
+    AlphaBetaResult
+    alphaBetaBlended(
+        const GameNode& gameNode,
+        std::uint8_t depth,
+        const std::uint8_t numSyncInterations,
+        std::shared_ptr<std::int16_t> globalAlpha,
+        std::shared_ptr<std::int16_t> globalBeta,
+        std::int16_t alpha,
+        std::int16_t beta,
+        bool isMaximizingPlayer
+    ) {
+        if (numSyncInterations == 0) {
+            throw std::invalid_argument("Number of iterations to synchronize must be nonzero.");
+        }
+
+        // Return if the maximum depth has been explored or there are no legal moves remaining
+        if (depth == 0 || gameNode.children().empty()) {
+            auto move = gameNode.lastMove();
+            auto activePlayerScore = gameNode.evaluateBoard();
+            auto score = isMaximizingPlayer ? activePlayerScore : -activePlayerScore;
+            move.setScore(score);
+            return {move, 1};
+        }
+
+        // Periodically synchronize alpha and beta values
+        if (depth % numSyncInterations == 0) {
+            if (globalAlpha != nullptr && alpha > *globalAlpha) {
+                #pragma omp critical
+                *globalAlpha = alpha = std::max(alpha, *globalAlpha);
+            }
+            if (globalBeta != nullptr && beta < *globalBeta) {
+                #pragma omp critical
+                *globalBeta = beta = std::min(beta, *globalBeta);
+            }
+        }
+
+        chess::Move bestMove;
+        size_t nodesExplored = 0;
+        #pragma omp firstprivate(alpha, beta, bestMove) reduction(+:nodesExplored)
+        {
+            if (isMaximizingPlayer) {
+                #pragma omp reduction(moveMax : bestMove)
+                {
+                    bestMove.setScore(eval_constants::MIN_SCORE - 1);
+                    #pragma omp parallel for
+                    for (const auto& child : gameNode.children()) {
+                        if (beta <= alpha) {
+                            continue;
+                        }
+                        auto result = alphaBetaBlended(*child, depth - 1, numSyncInterations, globalAlpha, globalBeta, alpha, beta, false);
+                        nodesExplored += result.nodesExplored;
+                        auto score = result.bestMove.score();
+                        if (score > bestMove.score()) {
+                            bestMove = child->lastMove();
+                            bestMove.setScore(score);
+                        }
+                        alpha = std::max(alpha, bestMove.score());
+                    } // omp parallel for
+                } // omp reduction max:bestMove
+            } else {
+                #pragma omp reduction(moveMin : bestMove)
+                {
+                    bestMove.setScore(eval_constants::MAX_SCORE + 1);
+                    #pragma omp parallel for
+                    for (const auto& child : gameNode.children()) {
+                        if (beta <= alpha) {
+                            continue;
+                        }
+                        auto result = alphaBetaBlended(*child, depth - 1, numSyncInterations, globalAlpha, globalBeta, alpha, beta, true);
+                        nodesExplored += result.nodesExplored;
+                        auto score = result.bestMove.score();
+                        if (score < bestMove.score()) {
+                            bestMove = child->lastMove();
+                            bestMove.setScore(score);
+                        }
+                        beta = std::min(beta, bestMove.score());
+                    } // omp parallel for
+                } // omp reduction min:bestMove
+            }
+        } // omp firstprivate
+        return {bestMove, nodesExplored};
+    }
+} // end anonymous namespace
+
 AlphaBetaResult alphaBeta(
+    const BlendedCutoffsTag& policy,
     const GameNode& gameNode,
     std::uint8_t depth,
-    const std::uint8_t numSyncInterations, // number of iterations before sync'ing
-    std::uint8_t curSyncIteration,
-    std::int16_t *globalAlpha, // globals must be instantiated outside of function call
-    std::int16_t *globalBeta,
+    std::uint8_t numSyncInterations,
     std::int16_t alpha,
     std::int16_t beta,
     bool isMaximizingPlayer
 ) {
-    // Return if the maximum depth has been explored or there are no legal moves remaining
-    if (depth == 0 || gameNode.children().empty()) {
-        auto move = gameNode.lastMove();
-        auto activePlayerScore = gameNode.evaluateBoard();
-        auto score = isMaximizingPlayer ? activePlayerScore : -activePlayerScore;
-        move.setScore(score);
-        return {move, 1};
-    }
-
-    // every couple iterations sync-up alpha and beta values
-    if (curSyncIteration == 0) {
-        if (alpha > *globalAlpha) {
-            #pragma omp critical
-            {
-                *globalAlpha = alpha = std::max(alpha, *globalAlpha);
-            } // omp critical
-        }
-        if (beta < *globalBeta) {
-            #pragma omp critical
-            {
-                *globalBeta = beta = std::min(beta, *globalBeta);
-            } // omp critical
-        }
-        curSyncIteration = numSyncInterations;
-    }
-    else {
-        curSyncIteration -= 1;
-    }
-
-    chess::Move bestMove;
-    size_t nodesExplored = 0;
-    #pragma omp firstprivate(alpha, beta, bestMove) reduction(+:nodesExplored)
-    {
-        if (isMaximizingPlayer) {
-            #pragma omp reduction(moveMax : bestMove)
-            {
-                bestMove.setScore(eval_constants::MIN_SCORE - 1);
-
-                #pragma omp parallel for
-                for (const auto& child : gameNode.children()) {
-                    if (beta <= alpha) {
-                        continue;
-                    }
-
-                    auto result = alphaBeta(*child, depth - 1, numSyncInterations, curSyncIteration, globalAlpha, globalBeta, alpha, beta,  false);
-                    nodesExplored += result.nodesExplored;
-                    auto score = result.bestMove.score();
-                    if (score > bestMove.score()) {
-                        bestMove = child->lastMove();
-                        bestMove.setScore(score);
-                    }
-                    alpha = std::max(alpha, bestMove.score());
-                } // omp parallel for
-            } // omp reduction max:bestMove
-        } else {
-            #pragma omp reduction(moveMin : bestMove)
-            {
-                bestMove.setScore(eval_constants::MAX_SCORE + 1);
-                #pragma omp parallel for
-                for (const auto& child : gameNode.children()) {
-                    if (beta <= alpha) {
-                        continue;
-                    }
-                    auto result = alphaBeta(*child, depth - 1, numSyncInterations, curSyncIteration - 1, globalAlpha, globalBeta, alpha, beta,  true);
-                    nodesExplored += result.nodesExplored;
-                    auto score = result.bestMove.score();
-                    if (score < bestMove.score()) {
-                        bestMove = child->lastMove();
-                        bestMove.setScore(score);
-                    }
-                    beta = std::min(beta, bestMove.score());
-                } // omp parallel for
-            } // omp reduction min:bestMove
-        } // if (maximizingPlayer)
-    } // omp firstprivate
-    return {bestMove, nodesExplored};
+    auto globalAlpha = std::make_shared<std::int16_t>(alpha);
+    auto globalBeta = std::make_shared<std::int16_t>(beta);
+    return alphaBetaBlended(gameNode, depth, numSyncInterations, globalAlpha, globalBeta, alpha, beta, isMaximizingPlayer);
 }
